@@ -3,5 +3,5 @@ opentype-layout working group documents
 
 ## Proposals
 
-* [Spacing Mark](otp_spacemark.md)
-* [Move Lookup](otp_movelookup.md)
+* [Spacing Mark](proposals/20151104-spacemark.md)
+* [Move Lookup](proposals/20151104-movelookup.md)
