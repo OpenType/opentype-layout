@@ -14,6 +14,8 @@ the origin of the cluster would be shifted back to include the origin of
 the mark, while the offset from the origin of the base would be equally adjusted
 to keep it in its same relative position.
 
+![Example](spacing_mark.png)
+
 In addition, since the advance of the mark has been incorporated into the base,
 the advance of the spacing mark is zeroed as it is attached.
 
