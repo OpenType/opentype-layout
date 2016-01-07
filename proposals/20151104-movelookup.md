@@ -7,7 +7,7 @@ in the glyph string. The lookup also supports swapping two glyphs.
 
 Most OpenType implmentations use a cluster model whereby glyphs that are
 attached or are reordered in relation to each other are in the same cluster.
-Therefore, if a glyph is moved across a cluster boundary, that cluster boundary
+If a glyph is moved across a cluster boundary, that cluster boundary
 should be removed and the clusters merged.
 
 
@@ -36,7 +36,7 @@ Type | Name       | Description
 0x01 | MoveThis   | Moves the current glyph by the given offset
 0x02 | MoveOther  | Moves the glyph at the given offset to before the current glyph
 0x04 | MoveLimit  | Only move if the glyph at MoveOffset is in class 2
-0x08 | MoveScan   | Scans up to MoveOffset, skipping any glyphs in class 3
+0x08 | MoveScan   | Scans up to and including, MoveOffset, skipping any glyphs in class 3
 
 If the MoveThis flag is set, then if MoveOffset is greater than 0, then the
 current glyph is moved to be after the glyph at the given relative offset.
@@ -56,11 +56,10 @@ meaning:
 
 * Class 1: Only glyphs in class 1 will be moved
 
-* Class 2: Glyphs will only swap or reorder before/after glyphs of class 2, if the
-  MoveLimit flag is set.
+* Class 2: If the MoveLimit flag is set, glyphs will only swap or reorder before/after glyphs of class 2.
 
 * Class 3: If the MoveScan flag is set, rather than simply checking and reordering at the given
-  MoveOffset, the lookup will scan from the given glyph in class 1 up to the
+  MoveOffset, the lookup will scan from the given glyph in class 1 up to and including, the
   MoveOffset in the direction of MoveOffset. The scan will skip any glyphs of
   class 3 until a glyph of class 2 is encountered, in which case the glyph
   will be reordered to before or after that glyph. If the scan reaches
@@ -69,7 +68,7 @@ meaning:
   in class 2.
 
 If the ClassDef offset is NULL then any glyph will move and the MoveLimit and
-MoveScan flags are ignored.
+MoveScan flags are treated as unset.
 
 ## Rationale
 
