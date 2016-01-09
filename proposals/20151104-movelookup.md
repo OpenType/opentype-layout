@@ -27,7 +27,8 @@ int8   | MoveOffset  | Distance to move, may be negative
 
 If the MoveOffset results in a position outside the glyph string or the absolute
 values of MoveOffset is 0 or greater than 32, no action occurs and the lookup is
-ignored.
+ignored. Likewise if the MoveOffset results in a position outside the glyph string, then
+no action occurs. This is true even if MoveScan is set.
 
 MoveFlags bit enumeration:
 
