@@ -60,19 +60,16 @@ again.
 
 When matching, the classIndex of the glyph being tested is searched for in the list of ClassNodes. If
 there is no corresponding ClassNode for the classIndex, then the match has failed. The only case when
-this is not the case is if there is a ClassNode with a classIndex of 0.
+this is not the case is if there is a ClassNode with a classIndex of 0xFFFF.
 
 Type   | Name       | Description
 ------ |----------- |--------------------------
 uint16 | classIndex | class index value to match
 Offset | chainNode  | Offset to ChainNode from start of the lookup subtable, for this match
 
-A `classIndex` of 0 is special. Since there is no difference between lack of a glyph entry in a class
-table and a class index of 0, all such glyphs are considered to not be matched by the engine. If such
-a glyph occurs it causes a match failure. The use, therefore, of a 0 `classIndex` in a ClassNode can
-be used as a default transition. In ChainNodes in the backup string the default action for many class
+A `classIndex` of 0xFFFF is special. It is used as a default transition. In ChainNodes in the backup string the default action for many class
 indices is to transition to the ChainNode for the next shorter backup ChainNode. Rather than having
-to store entries for all the unspecified class indices, using 0 allows for a fallback and alleviates
+to store entries for all the unspecified class indices, using 0xFFFF allows for a fallback and alleviates
 the need to store so many entries.
 
 ### ChainAction1
