@@ -1,12 +1,11 @@
 # Complex Contextual Chaining Lookup
 
 This is a proposal to add a GSUB lookup to support complex contextual chaining including string permutation.
-The lookup is designed to only have one subtable. In the case of multiple subtables, each subtable is
-its own pass: equivalent to a full lookup.
+
 
 ## Description
 
-The complex contextual chaining lookup is a class based contextual GSUB lookup.
+The complex contextual chaining lookup is a class based contextual GSUB lookup. The lookup is designed to only have one subtable. In the case of multiple subtables, each subtable is its own pass: equivalent to a full lookup.
 
 ### ComplexChainLookup1
 
@@ -27,7 +26,9 @@ The `maxBackup` and `minBackup` values describe how processing occurs. The input
 by maxBackup glyphs (skipping marks if specified, etc.) and if that is not possible then by as many as possible.
 If this number is less than minBackup then the lookup is said to have failed and processing stops. The amount
 of backup is kept and is used to modify indices in the ChainNode. Subtracting the minBackup from this backup
-value gives the index in the ChainNode array which specifies the starting ChainNode for processing.
+value gives the index in the ChainNode array which specifies the starting ChainNode for processing. Before
+backing up, the class index for the current glyph is tested for 0. If it is 0, then processing is skipped
+for this glyph and the match position is advanced.
 
 As the lookup progresses through the string, each action is able to adjust the starting point for the next
 match. This adjustment includes not advancing or even advancing backwards. To ensure that the lookup
@@ -40,8 +41,8 @@ to the furthest point and continues from there, as a best attempt to recover.
 
 Type   | Name                 | Description
 ------ |-----------           |--------------------------
+Offset | ChainAction          | Action for a final state. May be NULL
 uint16 | numTransitions       | Number of transitions
-Offset | ChainAction          | Action for a final state may be NULL
 struct | ClassNode[]          | Array of numTransitions ClassNode
 
 A ChainNode represents both action and comparison. During matching the ClassNode array is searched for
@@ -55,16 +56,36 @@ marks a node as being a final state.
 If no action occurs for a given match, the string is advanced one position and matching is done
 again.
 
+### ClassNode
+
+When matching, the classIndex of the glyph being tested is searched for in the list of ClassNodes. If
+there is no corresponding ClassNode for the classIndex, then the match has failed. The only case when
+this is not the case is if there is a ClassNode with a classIndex of 0.
+
+Type   | Name       | Description
+------ |----------- |--------------------------
+uint16 | classIndex | class index value to match
+Offset | chainNode  | Offset to ChainNode from start of the lookup subtable, for this match
+
+A `classIndex` of 0 is special. Since there is no difference between lack of a glyph entry in a class
+table and a class index of 0, all such glyphs are considered to not be matched by the engine. If such
+a glyph occurs it causes a match failure. The use, therefore, of a 0 `classIndex` in a ClassNode can
+be used as a default transition. In ChainNodes in the backup string the default action for many class
+indices is to transition to the ChainNode for the next shorter backup ChainNode. Rather than having
+to store entries for all the unspecified class indices, using 0 allows for a fallback and alleviates
+the need to store so many entries.
+
 ### ChainAction1
 
 Type   | Name                 | Description
 ------ |-----------           |--------------------------
 uint16 | ActionFormat         | Format identifier-format = 1
-uint8  | permuteLength        | Number of indices in the permute string
+uint8  | permuteIndex         | Index of the start of the string replaced by permutation
 uint8  | permuteReplace       | Number of input indices to replace during permutation
-uint8  | numSubstLookupRecord | Number of SubstLookupRecords
 uint8  | advance              | How far back to move start of next match
+uint8  | numSubstLookupRecord | Number of SubstLookupRecords
 struct | SubstLookupRecord[]  | Array of numSubstLookupRecord SubstLookupRecords
+uint16 | permuteLength        | Number of indices in the permute string
 uint8  | permute[]            | Array of permuteLength indices
 
 Indices correspond to positions in the matched string according to a matched node, back from the end
@@ -85,21 +106,6 @@ that replaces the final index.
 
 After all processing, further processing of the string occurs with the string index after that
 referenced by `advance`.
-
-### ClassNode
-
-Type   | Name       | Description
------- |----------- |--------------------------
-uint16 | classIndex | class index value to match
-Offset | chainNode  | Offset to ChainNode from start of the lookup subtable, for this match
-
-A `classIndex` of 0 is special. Since there is no difference between lack of a glyph entry in a class
-table and a class index of 0, all such glyphs are considered to not be matched by the engine. If such
-a glyph occurs it causes a match failure. The use, therefore, of a 0 `classIndex` in a ClassNode can
-be used as a default transition. In ChainNodes in the backup string the default action for many class
-indices is to transition to the ChainNode for the next shorter backup ChainNode. Rather than having
-to store entries for all the unspecified class indices, using 0 allows for a fallback and alleviates
-the need to store so many entries.
 
 ## Discussion
 
