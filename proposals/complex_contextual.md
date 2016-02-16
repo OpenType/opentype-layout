@@ -19,8 +19,7 @@ uint8  | maxLoop     | Maximum number of iterations before progress must have be
 uint8  | reserved    |
 Offset | ChainNode[] | Array of maxBackup - minBackup + 1 ChainNodes, relative to the start of the subtable
 
-The `ClassDef` is a single class that categorises glyphs in the input string. The `maxClass` speeds up class
-matching in the ClassNode array. Any class value greater than this is considered to be 0.
+The `ClassDef` is a single class that categorises glyphs in the input string.
 
 The `maxBackup` and `minBackup` values describe how processing occurs. The input glyph string is backed up
 by maxBackup glyphs (skipping marks if specified, etc.) and if that is not possible then by as many as possible.
