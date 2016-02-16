@@ -36,21 +36,34 @@ has been reached. A counter counts each time a match starts and is reset when th
 If the count reaches `maxLoop`, because progress is not being made, then the lookup jumps its processing
 to the furthest point and continues from there, as a best attempt to recover.
 
-### ChainNode1
+### ChainNode
+
+Type   | Name                 | Description
+------ |-----------           |--------------------------
+uint16 | numTransitions       | Number of transitions
+Offset | ChainAction          | Action for a final state may be NULL
+struct | ClassNode[]          | Array of numTransitions ClassNode
 
 A ChainNode represents both action and comparison. During matching the ClassNode array is searched for
 a node corresponding to the class index of the current glyph in the string. If matched, the search
 position in the input string is advanced and processing continues with the corresponding ChainNode.
-This continues until no match occurs. The ChainNode at this point is then actioned.
+This continues until no match occurs. If a ChainNode has no ChainAction then the engine is back
+tracked to the previously matching ChainNode and so on until a ChainNode with a ChainAction is
+encountered, or the beginning of the match is encountered. In effect a non-zero ChainAction offset
+marks a node as being a final state.
+
+If no action occurs for a given match, the string is advanced one position and matching is done
+again.
+
+### ChainAction1
 
 Type   | Name                 | Description
 ------ |-----------           |--------------------------
+uint16 | ActionFormat         | Format identifier-format = 1
 uint8  | permuteLength        | Number of indices in the permute string
 uint8  | permuteReplace       | Number of input indices to replace during permutation
 uint8  | numSubstLookupRecord | Number of SubstLookupRecords
 uint8  | advance              | How far back to move start of next match
-uint16 | numTransitions       | Number of transitions
-struct | ClassNode[]          | Array of numTransitions ClassNode
 struct | SubstLookupRecord[]  | Array of numSubstLookupRecord SubstLookupRecords
 uint8  | permute[]            | Array of permuteLength indices
 
@@ -73,7 +86,7 @@ that replaces the final index.
 After all processing, further processing of the string occurs with the string index after that
 referenced by `advance`.
 
-ClassNode :
+### ClassNode
 
 Type   | Name       | Description
 ------ |----------- |--------------------------
