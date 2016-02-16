@@ -56,6 +56,8 @@ marks a node as being a final state.
 If no action occurs for a given match, the string is advanced one position and matching is done
 again.
 
+The `ClassNode` is an array of ClassNodes sorted by `classIndex`.
+
 ### ClassNode
 
 When matching, the classIndex of the glyph being tested is searched for in the list of ClassNodes. If
@@ -67,8 +69,9 @@ Type   | Name       | Description
 uint16 | classIndex | class index value to match
 Offset | chainNode  | Offset to ChainNode from start of the lookup subtable, for this match
 
-A `classIndex` of 0xFFFF is special. It is used as a default transition. In ChainNodes in the backup string the default action for many class
-indices is to transition to the ChainNode for the next shorter backup ChainNode. Rather than having
+A `classIndex` of 0xFFFF is special. It is used as a default transition. In ChainNodes in the
+backup string the default action for many class indices is to transition to the ChainNode for
+the next shorter backup ChainNode. Rather than having
 to store entries for all the unspecified class indices, using 0xFFFF allows for a fallback and alleviates
 the need to store so many entries.
 
@@ -80,10 +83,10 @@ uint16 | ActionFormat         | Format identifier-format = 1
 uint8  | permuteIndex         | Index of the start of the string replaced by permutation
 uint8  | permuteReplace       | Number of input indices to replace during permutation
 uint8  | advance              | How far back to move start of next match
+uint8  | permuteLength        | Number of indices in the permute string
+uint8  | permute[]            | Array of permuteLength indices
 uint8  | numSubstLookupRecord | Number of SubstLookupRecords
 struct | SubstLookupRecord[]  | Array of numSubstLookupRecord SubstLookupRecords
-uint16 | permuteLength        | Number of indices in the permute string
-uint8  | permute[]            | Array of permuteLength indices
 
 Indices correspond to positions in the matched string according to a matched node, back from the end
 of the string thus far matched. Thus index 1 is after index 2 in the glyph string. If mark skipping
