@@ -40,20 +40,23 @@ to the furthest point and continues from there, as a best attempt to recover.
 
 Type   | Name                 | Description
 ------ |-----------           |--------------------------
-Offset | ChainAction          | Action for a final state. May be NULL
+uint8  | flags				  | bit 0 = isFinal
+uint8  | numActions			  | Number of Action offsets.
+Offset | ChainAction[]        | Action for a final state. May be NULL
 uint16 | numTransitions       | Number of transitions
 struct | ClassNode[]          | Array of numTransitions ClassNode
 
 A ChainNode represents both action and comparison. During matching the ClassNode array is searched for
 a node corresponding to the class index of the current glyph in the string. If matched, the search
 position in the input string is advanced and processing continues with the corresponding ChainNode.
-This continues until no match occurs. If a ChainNode has no ChainAction then the engine is back
-tracked to the previously matching ChainNode and so on until a ChainNode with a ChainAction is
-encountered, or the beginning of the match is encountered. In effect a non-zero ChainAction offset
-marks a node as being a final state.
+This continues until no match occurs. If the `flags` bit 0 is not set, to indicate that this is
+is a final state, then the engine backtracks to a previous ChainNode and corresponding string
+position in search of a final state, and so on until a final state is found. If no final state is
+found then the engine defaults to advancing the processing point by one position in the string.
 
-If no action occurs for a given match, the string is advanced one position and matching is done
-again.
+For a final state, if `numActions` is greater than 0, then the first `ChainAction` offset is executed
+as an action. For non final states and the `ChainAction` array lists offsets to action code
+according to the action chain number given in the action of the final state that is executed.
 
 The `ClassNode` is an array of ClassNodes sorted by `classIndex`.
 
@@ -68,9 +71,7 @@ Type   | Name       | Description
 uint16 | classIndex | class index value to match
 Offset | chainNode  | Offset to ChainNode from start of the lookup subtable, for this match
 
-A `classIndex` of 0xFFFF is special. It is used as a default transition. In ChainNodes in the
-backup string the default action for many class indices is to transition to the ChainNode for
-the next shorter backup ChainNode. Rather than having
+A `classIndex` of 0xFFFF is special. It is used as a default transition. Rather than having
 to store entries for all the unspecified class indices, using 0xFFFF allows for a fallback and alleviates
 the need to store so many entries.
 
@@ -79,11 +80,8 @@ the need to store so many entries.
 Type   | Name                 | Description
 ------ |-----------           |--------------------------
 uint16 | ActionFormat         | Format identifier-format = 1
-uint8  | permuteIndex         | Index of the start of the string replaced by permutation
-uint8  | permuteReplace       | Number of input indices to replace during permutation
 uint8  | advance              | How far back to move start of next match
-uint8  | permuteLength        | Number of indices in the permute string
-uint8  | permute[]            | Array of permuteLength indices
+uint8  | action_chain		  | Action chain number to look back for
 uint8  | numSubstLookupRecord | Number of SubstLookupRecords
 struct | SubstLookupRecord[]  | Array of numSubstLookupRecord SubstLookupRecords
 
@@ -91,20 +89,17 @@ Indices correspond to positions in the matched string according to a matched nod
 of the string thus far matched. Thus index 1 is after index 2 in the glyph string. If mark skipping
 is enabled, for example, it may be possible for there to be many glyphs between index 2 and index 1.
 
-If the `permuteLength` of a ChainNode being actioned is non-zero then the input glyph string, starting
-with the backup length index is replaced by a permutation of the input string. The `permute` string
-lists a sequence of indices which are used to replace the string up to the `permuteReplace` index. An index
-in the `permute` string may actually reference more than one glyph if mark skipping is turned on, for example.
-The same index may occur multiple times in the permute string. If the `permuteLength` is such that it consumes
-the final index (index of 0) then the "current position" of 0 is moved to be the end of the permuted string
-as output.
+If `action_chain` is non-zero, then the engine looks through the ChainNodes that went to make up
+this match to find any that have a non-zero `ChainAction` offset at the `action_chain` index.
+If one does, then it is processed at the position that ChainNode matched. Its `advance` is
+ignored.
 
-The permuted string is then used as input to the substlookuprecord processing. If an index of 0 is
-replaced with a longer string, the "current position" is advanced to be after the generated string
-that replaces the final index.
+The matched string is used as input to the substlookuprecord processing.
+
+> Need to describe what happens when a lookup changes the length of the processed string.
 
 After all processing, further processing of the string occurs with the string index after that
-referenced by `advance`.
+referenced by `advance`. The engine starts a new match at this point.
 
 ## Discussion
 
@@ -121,8 +116,10 @@ the output from a previous match in this lookup. A class is also used over multi
 The string permutation obviates the need for a move lookup.
 
 By making the chainNode offset relative to the subtable, it is possible to form loops in the
-node chain. This allows for full DFA processing. The question is whether loops need to be supported
-within the matched part of a string such that the action rules adapt accordingly. As it stands
-the matched portion and the final part of the string will need to be fixed length. One option is to
-facilitate the dropping of a marker in the input and then allowing indices to work relative to that
-as well as to the end of the matched string.
+node chain. This allows for full DFA processing. The action_chain mechanism is primarily of use
+for looped ChainNodes to allow processing within a klein star sequence.
+
+With care it is possible for a compiler to add transitions between ChainNodes that will incorporate
+the default behaviour of advancing, without having to have the engine restart a match, and
+so have to back up for the backtrack. But this is not a requirement.
+

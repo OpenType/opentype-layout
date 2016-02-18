@@ -21,55 +21,50 @@ MoveLookupFormat1:
 Type   | Name        | Description
 -----  | ----------  | -----------
 uint16 | SubstFormat | Format identifier-format = 1
-Offset | ClassDef    | Offset to glyph ClassDef table-from beginning of Substitution table. May be NULL
+Offset | Coverage    | Offset to a coverage of possible glyphs to move
 uint8  | MoveFlags   | Flags governing the move
 int8   | MoveOffset  | Distance to move, may be negative
 
-If the MoveOffset results in a position outside the glyph string or the absolute
-values of MoveOffset is 0 or greater than 32, no action occurs and the lookup is
-ignored. Likewise if the MoveOffset results in a position outside the glyph string, then
-no action occurs. This is true even if MoveScan is set.
+The `Coverage` table specifies whether the glyph is to processed or not. The
+`MoveOffset` is a signed offset specifying how many glyphs separate the
+*this* and *other* glyphs. Glyphs that are skipped due to processes such
+as mark skipping are not included in the offset.
 
 MoveFlags bit enumeration:
 
-Type | Name       | Description
----- | ---------- | -----------
-0x01 | MoveThis   | Moves the current glyph by the given offset
-0x02 | MoveOther  | Moves the glyph at the given offset to before the current glyph
-0x04 | MoveLimit  | Only move if the glyph at MoveOffset is in class 2
-0x08 | MoveScan   | Scans up to and including, MoveOffset, skipping any glyphs in class 3
+Type | Name        | Description
+---- | ----------  | -----------
+0x01 | CopyThis    | Copies the current glyph at the given offset
+0x02 | DelThis     | Deletes the current glyph at its current position
+0x04 | BeforeThis  | At the given offset means before the glyph at that position
+0x08 | WithThis    | Incorporate marks associated with this glyph in the action
+0x10 | CopyOther   | Copies the other glyph to the position of this glyph
+0x20 | DelOther    | Deletes the other glyph
+0x40 | BeforeOther | Specifies whether to copy before or after this glyph
+0x80 | WithOther   | Incorporate marks associated with the other glyph in the action
 
-If the MoveThis flag is set, then if MoveOffset is greater than 0, then the
-current glyph is moved to be after the glyph at the given relative offset.
-Likewise if MoveOffset is less than 0, then the current glyph is moved to be
-before the glyph at the given relative offset.
+Consider first the *this* glyph which is the one matched by the lookup. The
+`CopyThis` flag specifies that the glyph will be copied to the given offset.
+If `BeforeThis` is set then it will be copied to before the glyph at the specified
+offset. If not set then it will be copied after the glyph. If `WithOther` is set
+then after the glyph means after any following associated skipped marks to the
+other glyph. The `WithThis` flag indicates whether the associated skipped marks with the
+*this* glyph are also copied with the glyph.
 
-If the MoveOther flag is set, then if MoveOffset is greater than 0, then the
-other glyph is moved to be after the current glyph. If MoveOffset is less than
-0, then the other glyph is moved to be before the current glyph.
+The `DelThis` flag specifies that after the copy (if done) the glyph,
+and according to `WithThis` any associated skipped marks, are to be deleted.
 
-Notice that if both bits are set, the moves are considered to happen in
-parallel and the two glyphs are swapped.
+A matrix can be made from `CopyThis` and `DelThis`:
 
-The MoveLimit and MoveScan flags are used in conjunction with the ClassDef table,
-which if not present, are ignored. The classes in the ClassDef table have a fixed
-meaning:
+Copy | Del  | Description
+---- | ---- | -----------
+0    | 0    | No action
+0    | 1    | Delete
+1    | 0    | Copy
+1    | 1    | Move
 
-* Class 1: Only glyphs in class 1 will be moved
-
-* Class 2: If the MoveLimit flag is set, glyphs will only swap or reorder before/after glyphs of class 2.
-
-* Class 3: If the MoveScan flag is set, rather than simply checking and reordering at the given
-  MoveOffset, the lookup will scan from the given glyph in class 1 up to and including, the
-  MoveOffset in the direction of MoveOffset. The scan will skip any glyphs of
-  class 3 until a glyph of class 2 is encountered, in which case the glyph
-  will be reordered to before or after that glyph. If the scan reaches
-  MoveOffset without encountering a glyph from class 2, then no action occurs.
-  If MoveLimit is not set, then all glyphs not in class 3 are considered to be
-  in class 2.
-
-If the ClassDef offset is NULL then any glyph will move and the MoveLimit and
-MoveScan flags are treated as unset.
+The *other* glyph is handled correspondingly using the `CopyOther`, `DelOther`,
+`BeforeOther` and `WithOther` flags.
 
 ## Rationale
 
