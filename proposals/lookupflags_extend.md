@@ -38,4 +38,9 @@ ExtraFlag bit enumeration:
 Type   | Name                 | Description
 ------ | -------------------- | -----------
 0x7FFF | Reserved             | Set to zero
-0x8000 | Reserved               Reserved for future flags extension
+0x8000 | Reserved             | Set to zero. Reserved for future flags extension
+
+## Discussion
+
+Do we want to extend the `ExtraFlags` to 32-bits and save a level of future chaining?
+We are already expecting 4 bits to be used in future proposals.

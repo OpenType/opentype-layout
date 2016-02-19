@@ -3,6 +3,12 @@ opentype-layout working group documents
 
 ## Proposals
 
+Proposals fall into various different categories.
+
+### New Lookups
+
+#### GSUB
+
 * [Move Lookup](proposals/20151104-movelookup.md)
 * [Complex Contextual Chaining](proposals/complex_contextual.md)
 
@@ -14,3 +20,7 @@ implicitly reference each other in terms of the particular flag bit chosen.
 * [Extending LookupFlags](proposals/lookupflags_extend.md)
 * [Glyph Filtering](proposals/glyph_filtering.md)
 * [Spacing Attachment](proposals/20151104-spacemark.md)
+
+### Features
+
+* [Topographical Features](proposals/20160203-Joining_Feature_Proposal_1.2.pdf)
