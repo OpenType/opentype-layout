@@ -9,15 +9,17 @@ The complex contextual chaining lookup is a class based contextual GSUB lookup. 
 
 ### ComplexChainLookup1
 
-Type   | Name        | Description
------- |-----------  |--------------------------
-uint16 | SubstFormat | Format identifier-format = 1
-Offset | ClassDef    | class table for glyphids to be matched, relative to the start of the subtable
-uint8  | maxBackup   | Maximum string backup for matching
-uint8  | minBackup   | Minimum string backup
-uint8  | maxLoop     | Maximum number of iterations before progress must have been made
-uint8  | reserved    |
-Offset | ChainNode[] | Array of maxBackup - minBackup + 1 ChainNodes, relative to the start of the subtable
+Type     | Name         | Description
+-------- |------------- |--------------------------
+uint16   | SubstFormat  | Format identifier-format = 1
+Offset   | ClassDef     | class table for glyphids to be matched, relative to the start of the subtable
+uint8    | maxBackup    | Maximum string backup for matching
+uint8    | minBackup    | Minimum string backup
+uint8    | maxLoop      | Maximum number of iterations before progress must have been made
+uint8    | reserved     |
+uint16   | backupNode[] | Array of maxBackup - minBackup + 1 ChainNode references
+uint16   | numNodes	    | Number of ChainNodes
+Offset32 | ChainNode[]  | Array of offsets to ChainNodes
 
 The `ClassDef` is a single class that categorises glyphs in the input string.
 
@@ -40,23 +42,20 @@ to the furthest point and continues from there, as a best attempt to recover.
 
 Type   | Name                 | Description
 ------ |-----------           |--------------------------
-uint8  | flags				  | bit 0 = isFinal
-uint8  | numActions			  | Number of Action offsets.
-Offset | ChainAction[]        | Action for a final state. May be NULL
+uint8  | actionid			  | Action identifier for a final node
+uint16 | numActions			  | Number of Action offsets.
+Offset | ChainAction[]        | Action for a final state.
 uint16 | numTransitions       | Number of transitions
 struct | ClassNode[]          | Array of numTransitions ClassNode
 
 A ChainNode represents both action and comparison. During matching the ClassNode array is searched for
 a node corresponding to the class index of the current glyph in the string. If matched, the search
 position in the input string is advanced and processing continues with the corresponding ChainNode.
-This continues until no match occurs. If the `flags` bit 0 is not set, to indicate that this is
-is a final state, then the engine backtracks to a previous ChainNode and corresponding string
-position in search of a final state, and so on until a final state is found. If no final state is
-found then the engine defaults to advancing the processing point by one position in the string.
+As it goes the engine collects actions to process at each node. This continues until no match occurs.
+The engine backtracks until it finds a final node, one with a non-zero `actionid`.
 
-For a final state, if `numActions` is greater than 0, then the first `ChainAction` offset is executed
-as an action. For non final states and the `ChainAction` array lists offsets to action code
-according to the action chain number given in the action of the final state that is executed.
+Once a final state is selected for execution, all the collected actions with the same `actionid` as
+the final state, are executed at their corresponding positions in the order they were collected.
 
 The `ClassNode` is an array of ClassNodes sorted by `classIndex`.
 
@@ -69,37 +68,36 @@ this is not the case is if there is a ClassNode with a classIndex of 0xFFFF.
 Type   | Name       | Description
 ------ |----------- |--------------------------
 uint16 | classIndex | class index value to match
-Offset | chainNode  | Offset to ChainNode from start of the lookup subtable, for this match
+uint16 | chainNode  | chainNode index to use on match
 
 A `classIndex` of 0xFFFF is special. It is used as a default transition. Rather than having
 to store entries for all the unspecified class indices, using 0xFFFF allows for a fallback and alleviates
 the need to store so many entries.
 
-### ChainAction1
+### ChainAction
 
-Type   | Name                 | Description
------- |-----------           |--------------------------
-uint16 | ActionFormat         | Format identifier-format = 1
-uint8  | advance              | How far back to move start of next match
-uint8  | action_chain		  | Action chain number to look back for
-uint8  | numSubstLookupRecord | Number of SubstLookupRecords
-struct | SubstLookupRecord[]  | Array of numSubstLookupRecord SubstLookupRecords
+Type   | Name     | Description
+------ |--------- |--------------------------
+uint8  | chainid  | Action chain number of this action
+uint8  | distance | How far back to process
+uint16 | lookup   | Lookup id to execute
 
-Indices correspond to positions in the matched string according to a matched node, back from the end
-of the string thus far matched. Thus index 1 is after index 2 in the glyph string. If mark skipping
-is enabled, for example, it may be possible for there to be many glyphs between index 2 and index 1.
+The `distance` correspond to a position in the matched string according to a matched node, back from the end
+of the string thus far matched. Thus distance 1 is after distance 2 in the glyph string. If mark skipping
+is enabled, for example, it may be possible for there to be many glyphs between distance 2 and distance 1.
 
-If `action_chain` is non-zero, then the engine looks through the ChainNodes that went to make up
-this match to find any that have a non-zero `ChainAction` offset at the `action_chain` index.
-If one does, then it is processed at the position that ChainNode matched. Its `advance` is
-ignored.
+The lookup specifies the lookup id to execute at the specified string position. The following are
+special lookup ids that are reserved for other actions:
 
-The matched string is used as input to the substlookuprecord processing.
+Id     | Description
+------ | -----------
+0xFFFF | Start new match here after action processing
+
+For a lookup id of 0xFFFF, the last executed action will give the final result.
 
 > Need to describe what happens when a lookup changes the length of the processed string.
 
-After all processing, further processing of the string occurs with the string index after that
-referenced by `advance`. The engine starts a new match at this point.
+After a final state action is completed the engine restarts following that point in the string.
 
 ## Discussion
 

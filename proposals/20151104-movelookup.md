@@ -22,7 +22,7 @@ Type   | Name        | Description
 -----  | ----------  | -----------
 uint16 | SubstFormat | Format identifier-format = 1
 Offset | Coverage    | Offset to a coverage of possible glyphs to move
-uint8  | MoveFlags   | Flags governing the move
+uint16 | MoveFlags   | Flags governing the move
 int8   | MoveOffset  | Distance to move, may be negative
 
 The `Coverage` table specifies whether the glyph is to processed or not. The
@@ -32,16 +32,17 @@ as mark skipping are not included in the offset.
 
 MoveFlags bit enumeration:
 
-Type | Name        | Description
----- | ----------  | -----------
-0x01 | CopyThis    | Copies the current glyph at the given offset
-0x02 | DelThis     | Deletes the current glyph at its current position
-0x04 | BeforeThis  | At the given offset means before the glyph at that position
-0x08 | WithThis    | Incorporate marks associated with this glyph in the action
-0x10 | CopyOther   | Copies the other glyph to the position of this glyph
-0x20 | DelOther    | Deletes the other glyph
-0x40 | BeforeOther | Specifies whether to copy before or after this glyph
-0x80 | WithOther   | Incorporate marks associated with the other glyph in the action
+Type   | Name        | Description
+------ | ----------  | -----------
+0x0001 | CopyThis    | Copies the current glyph at the given offset
+0x0002 | DelThis     | Deletes the current glyph at its current position
+0x0004 | BeforeThis  | At the given offset means before the glyph at that position
+0x0008 | WithThis    | Incorporate marks associated with this glyph in the action
+0x0010 | CopyOther   | Copies the other glyph to the position of this glyph
+0x0020 | DelOther    | Deletes the other glyph
+0x0040 | BeforeOther | Specifies whether to copy before or after this glyph
+0x0080 | WithOther   | Incorporate marks associated with the other glyph in the action
+0x0100 | matchEOS    | End of string constitutes a match
 
 Consider first the *this* glyph which is the one matched by the lookup. The
 `CopyThis` flag specifies that the glyph will be copied to the given offset.
@@ -65,6 +66,13 @@ Copy | Del  | Description
 
 The *other* glyph is handled correspondingly using the `CopyOther`, `DelOther`,
 `BeforeOther` and `WithOther` flags.
+
+If `matchEOS` is set and on scanning (due to mark filtering) the end of the string
+is encountered, then it is considered to be counted. If the offset is such that this
+would then be a good place to move something then that move will happen. One cannot
+insert after the final EOS or before the initial EOS, therefore if the `BeforeThis`
+is set wrongly, not action occurs. No *other* type actions occur with an EOS. They
+are ignored.
 
 ## Rationale
 
