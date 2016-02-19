@@ -9,7 +9,7 @@ flexibility in processing lookups. This proposal extends that to include non-mar
 
 If set `UseFiltering` extends the mark filtering concept to include non marks. The
 flag works in conjunction with the `UseMarkFilteringSet` flag to specify the
-semantics of `MarkAttachmentType`
+semantics of `MarkFilteringSet`.
 
 Filtering | MarkFiltering | Description
 --------- | ------------- | -----------
