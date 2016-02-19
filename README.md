@@ -8,6 +8,9 @@ opentype-layout working group documents
 
 ### New Lookup flag
 
+These proposals add new flags to the LookupFlags of all lookups. As such they
+implicitly reference each other in terms of the particular flag bit chosen.
+
 * [Extending LookupFlags](proposals/lookupflags_extend.md)
 * [Glyph Filtering](proposals/glyph_filtering.md)
 * [Spacing Attachment](proposals/20151104-spacemark.md)
