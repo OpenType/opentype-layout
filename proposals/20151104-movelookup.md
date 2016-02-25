@@ -124,6 +124,10 @@ within the string, these lookups can become complex and interact in complex ways
 needing special marker glyphs to be inserted and deleted. This also slows down
 shaping due to the added contextual lookups.
 
+A further complexity is that trying to reorder glyphs this way causes the creation of
+ligatures (see lookup 3) even though there is no intent to actually ligate anything. This causes
+problems later when attaching to the base (x in this case).
+
 If this proposal is implemented, the above lookups become:
 
 ````

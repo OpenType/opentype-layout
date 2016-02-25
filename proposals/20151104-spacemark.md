@@ -39,15 +39,3 @@ font has the job of zeroing its marks.
 This added semantic can be enabled to help resolve the calculations needed to
 account for protruding diacritics and ensuring appropriate spacing with minimal
 complexity.
-
-## Comments
-
-This approach to adding a single bit to a lookup is complicated by the desire to
-leave space for future bits in the main LookupFlag.
-
-The Reserved bits in the LookupFlag enumeration will probably be used for
-directionality filtering. The need here is to ensure that the flags are
-extensible into the future.
-
-Where fields are unchanged from the original text, the original text description
-should be used.
