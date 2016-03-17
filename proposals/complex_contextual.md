@@ -111,8 +111,6 @@ the input glyph string to be remapped into class space to simplify comparison. A
 in handling the sublookups that get executed, given the ability this lookup provides to reprocess
 the output from a previous match in this lookup. A class is also used over multiple coverage tables, to save space.
 
-The string permutation obviates the need for a move lookup.
-
 By making the chainNode offset relative to the subtable, it is possible to form loops in the
 node chain. This allows for full DFA processing. The action_chain mechanism is primarily of use
 for looped ChainNodes to allow processing within a klein star sequence.
