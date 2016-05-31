@@ -17,7 +17,9 @@ to keep it in its same relative position.
 ![Example](spacing_mark.png)
 
 In addition, since the advance of the mark has been incorporated into the base,
-the advance of the spacing mark is zeroed as it is attached.
+the advance of the spacing mark is zeroed as it is attached. Any subsequent
+changes of the offset or advance of the mark do not change any of the offset
+or advance of the base.
 
 ## Changes
 
