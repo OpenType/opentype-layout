@@ -25,8 +25,8 @@ The `ClassDef` is a single class that categorises glyphs in the input string.
 
 The `maxBackup` and `minBackup` values describe how processing occurs. The input glyph string is backed up
 by maxBackup glyphs (skipping marks if specified, etc.) and if that is not possible then by as many as possible.
-If this number is less than minBackup then the lookup is said to have failed and processing stops. The amount
-of backup is kept and is used to modify indices in the ChainNode. Subtracting the minBackup from this backup
+If this number is less than minBackup then the lookup fails and processing stops. The amount
+of backup is kept and used to modify indices in the ChainNode. Subtracting the minBackup from this backup
 value gives the index in the ChainNode array which specifies the starting ChainNode for processing. Before
 backing up, the class index for the current glyph is tested for 0. If it is 0, then processing is skipped
 for this glyph and the match position is advanced.
@@ -35,7 +35,7 @@ As the lookup progresses through the string, each action is able to adjust the s
 match. This adjustment includes not advancing or even advancing backwards. To ensure that the lookup
 does not process forever or explode its output, it keeps track of the furthest point in the input string that
 has been reached. A counter counts each time a match starts and is reset when the furthest point is reached.
-If the count reaches `maxLoop`, because progress is not being made, then the lookup jumps its processing
+If the count reaches `maxLoop`, because progress is assumed to not have occurred, the lookup jumps its processing
 to the furthest point and continues from there, as a best attempt to recover.
 
 ### ChainNode
@@ -82,7 +82,7 @@ uint8  | chainid  | Action chain number of this action
 uint8  | distance | How far back to process
 uint16 | lookup   | Lookup id to execute
 
-The `distance` correspond to a position in the matched string according to a matched node, back from the end
+The `distance` corresponds to a position in the matched string according to a matched node, back from the end
 of the string thus far matched. Thus distance 1 is after distance 2 in the glyph string. If mark skipping
 is enabled, for example, it may be possible for there to be many glyphs between distance 2 and distance 1.
 

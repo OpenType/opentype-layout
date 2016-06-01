@@ -67,5 +67,26 @@ This leads to a further problem. If w & z are not present then our reordering re
 
 For this we would need another lookup: xy that sub x by y x; rather than by y x y;
 
-And so the final result for a simple! reordering is 3 large lookups with entries for all x and z, multiplied by the contents of y (3 lookups per y!) and then a chaining contextual
+```
+lookup yx {
+  sub x by y x ;
+} yx;
+
+lookup yxy {
+  sub x by y x y;
+} yxy;
+
+lookup zy {
+  sub x y by x;
+  sub z y by z;
+} zy;
+
+lookup reorder {
+  sub x' lookup yxy w' lookup zy z y' lookup zy;
+  sub x' lookup yx y' lookup zy;
+} reorder;
+```
+
+And so the final result for a simple! reordering is 3 large lookups with entries
+for all x and z, multiplied by the contents of y (3 lookups per y!) and then a chaining contextual
 to hold it all together. A move lookup is so much simpler!
