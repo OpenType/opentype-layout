@@ -37,7 +37,8 @@ attach to x. We have to do something more complicated:
 
 > xwzy / x -> yxy; xy -> x; zy -> z
 
-Here now the xy -> x step has made x into a ligature base and so now diacritics can attach to it. In addition, all the glyphs in the sequence are either component 0 (for y) or a ligature
+Here now the xy -> x step has made x into a ligature base and so now diacritics
+can attach to it. In addition, all the glyphs in the sequence are either component 0 (for y) or a ligature
 base (for x & z).
 
 To achieve this, we would need the following fea:

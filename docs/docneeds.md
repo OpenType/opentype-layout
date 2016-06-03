@@ -22,9 +22,21 @@ For a ligature component that is not a mark, will a mark attach to the component
 Mark Attachment?
 
 ### How are Ligature Components formed and unformed?
+In a 1 to many lookup how are marks attached?
 
 #### How does a glyph become a ligature component?
 What kind of lookup and which glyphs become ligature components
 
 #### How does a ligature component lose its component status?
 Once a glyph is a ligature component, is it possible to turn it back into a normal base/mark?
+
+## Cursive Attachment
+
+### Cursive attachment of marks
+
+What happens? What happens if the first glyph is subsequently adjusted.
+
+## Cluster Definitions
+
+### What is the cluster definition for each shaping engine including DFLT
+
