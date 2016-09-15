@@ -24,3 +24,8 @@ implicitly reference each other in terms of the particular flag bit chosen.
 ### Features
 
 * [Topographical Features](proposals/20160203-Joining_Feature_Proposal_1.2.pdf)
+
+## Other Documents
+
+* [Documentation Needs](docs/docneeds.md)
+* [Ligature Formation](docs/ligatures.md)
