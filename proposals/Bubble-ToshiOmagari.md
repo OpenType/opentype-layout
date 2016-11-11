@@ -1,7 +1,7 @@
 This is a proposal for a new bubble table (BUBL?) in a font.
 
 ##Overview
-Traditionally, a glyph has square bounding box to determine its space around letterforms. It works mostly okay with Latin, certainly not so much in non-Latin, and this box is why we need kerning, to compensatefor the imperfection of the square spacing. Bubble is a better alternative, made of arbitrary shapes drawn by the type designer. For more details, please see [my ATypI presentation](https://www.youtube.com/watch?v=4mh7dbcP3zQ).
+Traditionally, a glyph has square bounding box to determine its space around letterforms. It works mostly okay with Latin, certainly not so much in non-Latin, and this box is why we need kerning, to compensate for the imperfection of the square spacing. Bubble is a better alternative, made of arbitrary shapes drawn by the type designer. For more details, please see [my ATypI presentation](https://www.youtube.com/watch?v=4mh7dbcP3zQ).
 Thanks to Martin Hosken for discussing the idea with me.
 
 ##Processing
