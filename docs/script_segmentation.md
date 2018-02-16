@@ -42,9 +42,9 @@ Gecko, the text layout engine for FireFox and other Mozilla based applications, 
 def isClusterExtender(ch):
     cat = u_charType(ch)
     # includes U_ENCLOSING_MARK
-    if U_NON_SPACING_MARK <= cat <= U_COMBINING_SPACING_MARK or \
-        0x200C <= ord(ch) <= 0x200D or \
-        0xFF9E <= ord(ch) <= 0xFF9F    # katakan sound marks
+    return U_NON_SPACING_MARK <= cat <= U_COMBINING_SPACING_MARK or \
+        	0x200C <= ord(ch) <= 0x200D or \
+        	0xFF9E <= ord(ch) <= 0xFF9F    # katakan sound marks
 
 def sameScript(sc1, sc2, ch):
     return sc <= USCRIPT_INHERITED or \
@@ -64,12 +64,15 @@ def runs(text):
 	for i,c in enumerate(text[1:]):
 		if treatAsZeroWidthSpace(c): continue
 		nextScript = uscript_getScript(c)
-		if nextScript == USCRIPT_INHERITED or nextScript == USCRIPT_COMPLEX:
+		if nextScript == USCRIPT_INHERITED or\
+				nextScript == USCRIPT_COMPLEX:
 			continue
-		elif currentScript == USCRIPT_INHERITED or currentScript == USCRIPT_COMPLEX:
+		elif currentScript == USCRIPT_INHERITED or \
+				currentScript == USCRIPT_COMPLEX:
 			currentScript = nextScript
 			continue
-		elif currentScript != nextScript and not uscript_hasScript(c, currentScript):
+		elif currentScript != nextScript and \
+				not uscript_hasScript(c, currentScript):
 			yield((text[startIndex:i], currentScript))
 			currentScript = nextScript
 			startIndex = i
@@ -89,7 +92,9 @@ def getScripts(ch):
 	primary = uscript_getScript(ch)
 	if primary == res[0]:
 		pass
-	elif primary != USCRIPT_INHERITED and primary != USCRIPT_COMMON and primary != USCRIPT_INVALID_CODE:
+	elif primary != USCRIPT_INHERITED and \
+			primary != USCRIPT_COMMON and \
+			primary != USCRIPT_INVALID_CODE:
 		res.insert(0, primary)
 	elif primary == USCRIPT_COMMON:
 		if len(res) == 1:
@@ -119,7 +124,8 @@ class runs(object):
 		self.ahead_set = getScripts(ch)
 		if len(self.ahead_set) == 0:
 			return False
-		if self.ahead_set[0] == USCRIPT_INHERITED and len(self.ahead_set) > 1:
+		if self.ahead_set[0] == USCRIPT_INHERITED and \
+				len(self.ahead_set) > 1:
 			if self.next_set[0] == USCRIPT_COMMON:
 				self.next_set = ahead_set
 				self.next_set.pop(0)
