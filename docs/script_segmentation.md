@@ -42,8 +42,8 @@ Gecko, the text layout engine for FireFox and other Mozilla based applications, 
 def isClusterExtender(ch):
     cat = u_charType(ch)
     # includes U_ENCLOSING_MARK
-    if U_NON_SPACING_MARK <= cat <= U_COMBINING_SPACING_MARK ||
-        0x200C <= ord(ch) <= 0x200D || # ZWJ, ZWNJ
+    if U_NON_SPACING_MARK <= cat <= U_COMBINING_SPACING_MARK or \
+        0x200C <= ord(ch) <= 0x200D or \
         0xFF9E <= ord(ch) <= 0xFF9F    # katakan sound marks
 
 def sameScript(sc1, sc2, ch):
