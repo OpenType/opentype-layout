@@ -15,24 +15,29 @@ LibreOffice uses ICU as the main mechanism for ascertaining the script of a char
 
 ```python
 def sameScript(sc1, sc2, ch):
-    return sc1 <= USCRIPT_INHERITED or sc2 <= USCRIPT_INHERITED or sc1==sc2
+    return  sc1 <= USCRIPT_INHERITED or \
+    		sc2 <= USCRIPT_INHERITED or \
+    		sc1==sc2
 
 def runs(text):
 	scriptCode = USCRIPT_COMMON
 	scriptStart = 0
 	for i,c in enumerat(text):
-	    sc = uscript_getScript(ch)
-	    if sameScript(scriptCode, sc, c):
-		if (scriptCode <= USCRIPT_INHERITED and sc > USCRIPT_INHERITED):
-		    scriptCode = sc
-	    else:
-		yield((text[scriptStart:i], scriptCode))
-		scriptStart = i
-		scriptCode = sc
+		sc = uscript_getScript(ch)
+		if sameScript(scriptCode, sc, c):
+			if (scriptCode <= USCRIPT_INHERITED \
+					and sc > USCRIPT_INHERITED):
+				scriptCode = sc
+		else:
+			yield((text[scriptStart:i], scriptCode))
+			scriptStart = i
+			scriptCode = sc
 	if scriptStart < len(text):
 	    yield((text[scriptStart:], scriptCode))
 ```
 In addition, the algorithm ensures that runs between paired punctuation are kept together. That logic is not shown here.
+
+LibreOffice processes a paragraph and a run is the intersection between a script segmentation and a bidi segmentation. Thus script segmentation is not limited by bidi segmentation but occurs over the whole paragraph.
 
 ### Firefox
 
@@ -52,6 +57,7 @@ def sameScript(sc1, sc2, ch):
     		isClusterExtender(ch) or \
     		uscript_hasScript(ch, sc1)  # script extensions of ch include sc1?
 ```
+Gecko does word caching for the most part and splits segments into words for caching and shaping. A segment is created from a paragraph of text by first running the bidi algorithm and then splitting each bidi run according to script and then by word.
 
 ### WebKit
 
@@ -80,6 +86,7 @@ def runs(text):
 		yield((text[startIndex:], currentScript))		
 ```	
 
+WebKit splits text based on bidi and then based on font and then on script.
 
 ### Blink
 
@@ -184,6 +191,8 @@ class runs(object):
 		self.current_set = [USCRIPT_COMMON]
 		yield((text[lasti:], script))
 ```
+
+Blink first breaks text into bidi segments, then into words and then into scripts.
 
 One question is whether all this machinery is needed. This is certainly a fair question given that of the characters that have an extended script list, most of them have a default script of COMMON or INHERITED and therefore will take the script of characters around them. Many of the remaining characters with a specific default script, most of these are digits, which, apart from appropriate script based styling, are unlikely to cause problems on a run boundary.
 
