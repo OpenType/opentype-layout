@@ -91,3 +91,10 @@ lookup reorder {
 And so the final result for a simple! reordering is 3 large lookups with entries
 for all x and z, multiplied by the contents of y (3 lookups per y!) and then a chaining contextual
 to hold it all together. A move lookup is so much simpler!
+
+## DirectWrite
+
+Testing on DirectWrite has turned up that breaking a ligature composed of a sequence as done in this
+example doesn't work. I'm assuming the reasoning goes something like: it's all the same ligature so the
+components remain. This is not helpful and creating a ligature out of a set of components should result
+in components being renumbered.
