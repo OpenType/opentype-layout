@@ -97,7 +97,13 @@ For a lookup id of 0xFFFF, the last executed action will give the final result.
 
 > Need to describe what happens when a lookup changes the length of the processed string.
 
-After a final state action is completed the engine restarts following that point in the string.
+After a final state action is completed the engine restarts with the next glyph following either:
+
+. The latest glyph in the stream which has had a lookup 0xFFFF _executed_ on it.
+. Or if no such glyph exists, the latest glyph in the stream for which any lookup has been executed.
+
+Restarting includes backtracking and starting with the first ChainNode. The only difference from completely
+restarting the lookup, is that the furthest point tracker and counter are not reset.
 
 ## Discussion
 
@@ -112,7 +118,7 @@ in handling the sublookups that get executed, given the ability this lookup prov
 the output from a previous match in this lookup. A class is also used over multiple coverage tables, to save space.
 
 By making the chainNode offset relative to the subtable, it is possible to form loops in the
-node chain. This allows for full DFA processing. The action_chain mechanism is primarily of use
+node chain. This allows for full DFA processing. The action\_chain mechanism is primarily of use
 for looped ChainNodes to allow processing within a klein star sequence.
 
 With care it is possible for a compiler to add transitions between ChainNodes that will incorporate
