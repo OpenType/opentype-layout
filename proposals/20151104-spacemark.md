@@ -63,6 +63,54 @@ MarkToLigature and MarkToMark attachment type lookups. In each of these cases
 the attaching glyph is treated as though it were a spacing mark, even in a
 Cursive attachment. For all other lookup types, the flag is ignored.
 
+The effect of setting the flag on different attachment type lookups is based
+on the x-position of the attachment point on the _mark_ glyph (`_P`) that is
+the one that moves, its advance (`_A`). Also on the attachment point
+x-position on the _base_ glyph (`P`), that is the one that does not move, and
+its advance (`A`).
+
+### Mark to Base (Type 4)
+
+On attachment, the advance of the base is adjusted such that if `_A + P - _P > A`
+then `A` becomes `_A + P - _P` and the advance on the mark (`_A`) is set
+to 0. Likewise if the width of the diacritic to the left is greater than the
+base, then the base is shifted. The shift is `_P - P`, if that value is
+greater than 0. Shifting a base shifts all marks that are attached to it. An
+alternative interpretation is that all marks following a base are also
+shifted by the same amount. The base advance is also increased by the same
+amount.
+
+Shifting of a base glyph is achieved by increasing the advance on the most
+immediately preceding base or ligature glyph. This is necessary in order that
+the attachment points on the base do not become mispositioned.
+
+If the base is cursively attached, then for the purposes of advance or shift
+the advance is of the accumulated advance of all the glyphs cursively
+attached. The measurement for `P` is increased by the advances of all the
+glyphs up to the base glyph, in the cusrively attached cluster. When
+processing right to left, appropriate care must be taken that the advance and
+origin of the cluster are appropriately calculated with respect to the
+attached mark.
+
+### Mark to Ligature (Type 5)
+
+This behaves in exactly the same way as for a Mark to Base attachment.
+
+### Mark to Mark (Type 6)
+
+Marks may attach to other marks. Here only the advance of the base mark is
+adjusted by the attachment of a mark. As for the Mark to Base attachment, the
+advance of the base mark may be adjusted if `_A + P - _P > A` in which case
+it becomes `_A + P - _P`. No adjustment is made of the origin of the base
+mark since there is no way of doing this without mispositioning attachment
+points on the base mark.
+
+### Cursive Attachment (Type 3)
+
+Except for the impact on Mark to Base attachment above, cursive attachment
+itself is unaffected by the SpacingAttach flag and it is ignored for this
+type of lookup.
+
 ## Rationale
 
 Some shapers zero their marks. This means the advance of the mark is set to
