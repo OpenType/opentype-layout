@@ -40,28 +40,14 @@ cluster.
 Since the advance of the mark has been incorporated into the base,
 the advance of the spacing mark is zeroed as it is attached.
 
-Conceptually, this proposal changes how all mark attachment lookups behave. After
-attachment, a relationship is kept between the mark and its base, be that a base
-or a mark. If the base in such a relationship is subsequently
-moved, then all the marks in attachment relationship with that base are
-moved by the same amount. This is akin to moving other cursively attached glyphs 
-when a cursively attached glyph is moved, except it is with regard to marks.
-If a base in cursive relationship with other bases is
-moved such that one of its attached marks is now positioned outside the cluster
-region, the cluster does not need to be adjusted (as in bases or advances changed).
-Glyphs that are in a positional relationship with a base (mark or base) but not
-and attachment relationship, do not move when the base moves. Likewise, attached
-glyphs do not move if the advance of the base is adjusted, but following non-attached
-glyphs will move.
-
 ## Changes
 
 > Define LookupFlags 0x0040 as the `SpacingAttach` flag
 
-The `SpacingAttach` flag has meaning in the context of Cursive, MarkToBase,
+The `SpacingAttach` flag has meaning in the context of MarkToBase,
 MarkToLigature and MarkToMark attachment type lookups. In each of these cases
-the attaching glyph is treated as though it were a spacing mark, even in a
-Cursive attachment. For all other lookup types, the flag is ignored.
+the attaching glyph is treated as though it were a spacing mark.
+For all other lookup types, the flag is ignored.
 
 The effect of setting the flag on different attachment type lookups is based
 on the x-position of the attachment point on the _mark_ glyph (`_P`) that is
@@ -69,26 +55,39 @@ the one that moves, its advance (`_A`). Also on the attachment point
 x-position on the _base_ glyph (`P`), that is the one that does not move, and
 its advance (`A`).
 
+There are various processing models, including keeping a full tree of mark
+attachment relationships. The model described here is designed for a
+"position and forget" model where marks are positioned but no relationship is
+maintained. For this we introduce the concept of a shift attribute on the
+_base_ glyph (`S`) and on the _mark_ (`_S`).
+
 ### Mark to Base (Type 4)
 
-On attachment, the advance of the base is adjusted such that if `_A + P - _P > A`
-then `A` becomes `_A + P - _P` and the advance on the mark (`_A`) is set
+On attachment, the advance of the base is adjusted such that if `_A + S + P - _S - _P > A`
+then `A` becomes `_A + S + P - _S - _P` and the advance on the mark (`_A`) is set
 to 0. Likewise if the width of the diacritic to the left is greater than the
-base, then the base is shifted. The shift is `_P - P`, if that value is
-greater than 0. Shifting a base shifts all marks that are attached to it. An
-alternative interpretation is that all marks following a base are also
-shifted by the same amount. The base advance is also increased by the same
-amount.
+base, then the base is shifted. The shift is `_S + _P - S - P`, if that value is
+greater than 0. 
 
-Shifting of a base glyph is achieved by increasing the advance on the most
-immediately preceding base or ligature glyph. This is necessary in order that
-the attachment points on the base do not become mispositioned.
+In order to shift a base glyph, that is not cursively attached, there needs
+to be an extra attribute on the glyph that holds the shift. Simply increasing
+the advance on a previous glyph does not allow a future Mark to Base
+attachment to know that this base already has extra space inserted in front
+of it. After
+all attachment is done the shift attribute can be used to either offset all
+the glyphs in the cluster (base plus all following marks) and the advance of
+the base glyph, or by increasing the advance on the preceding base or
+ligature.
 
 If the base is cursively attached, then for the purposes of advance or shift
 the advance is of the accumulated advance of all the glyphs cursively
 attached. The measurement for `P` is increased by the advances of all the
-glyphs up to the base glyph, in the cusrively attached cluster. When
-processing right to left, appropriate care must be taken that the advance and
+glyphs up to the base glyph, in the cursively attached cluster. Likewise the
+advance of the base is the accumulated advances of all the glyphs following
+the base, in the cursive cluster. Any increase in advance is applied to the
+last glyph of the cursive cluster. This may affect the order in which glyphs
+are attached in order to get expected behaviour. When processing right to
+left, appropriate care must be taken that the advance and
 origin of the cluster are appropriately calculated with respect to the
 attached mark.
 
@@ -98,18 +97,9 @@ This behaves in exactly the same way as for a Mark to Base attachment.
 
 ### Mark to Mark (Type 6)
 
-Marks may attach to other marks. Here only the advance of the base mark is
-adjusted by the attachment of a mark. As for the Mark to Base attachment, the
-advance of the base mark may be adjusted if `_A + P - _P > A` in which case
-it becomes `_A + P - _P`. No adjustment is made of the origin of the base
-mark since there is no way of doing this without mispositioning attachment
-points on the base mark.
+Marks may attach to other marks. Here attachment is much like for the Mark to Base. Marks may have shifts and advances just like bases. The only difference is that after all attachment is completed, the shift of a mark is ignored.
 
-### Cursive Attachment (Type 3)
-
-Except for the impact on Mark to Base attachment above, cursive attachment
-itself is unaffected by the SpacingAttach flag and it is ignored for this
-type of lookup.
+The effect of this approach to a long chain of stacked diacritics is that they will have to be attached twice. The first pass is done in reverse order with the latest mark attaching to the earlier in order to propagate all the width and shift onto the bottom mark. Then the marks are attached in conventional order. Long chains of spacing attachments are very rare.
 
 ## Rationale
 
