@@ -97,9 +97,15 @@ This behaves in exactly the same way as for a Mark to Base attachment.
 
 ### Mark to Mark (Type 6)
 
-Marks may attach to other marks. Here attachment is much like for the Mark to Base. Marks may have shifts and advances just like bases. The only difference is that after all attachment is completed, the shift of a mark is ignored.
+Marks may attach to other marks. Here attachment is much like for the Mark to
+Base. Marks may have shifts and advances just like bases. The only difference
+is that after all attachment is completed, the shift of a mark is ignored.
 
-The effect of this approach to a long chain of stacked diacritics is that they will have to be attached twice. The first pass is done in reverse order with the latest mark attaching to the earlier in order to propagate all the width and shift onto the bottom mark. Then the marks are attached in conventional order. Long chains of spacing attachments are very rare.
+The effect of this approach to a long chain of stacked diacritics is that
+they will have to be attached twice. The first pass is done in reverse order
+with the latest mark attaching to the earlier in order to propagate all the
+width and shift onto the bottom mark. Then the marks are attached in
+conventional order. Long chains of spacing attachments are very rare.
 
 ## Rationale
 

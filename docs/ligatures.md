@@ -83,7 +83,7 @@ lookup zy {
 } zy;
 
 lookup reorder {
-  sub x' lookup yxy w' lookup zy z y' lookup zy;
+  sub x' lookup yxy w' lookup zy z' y' lookup zy;
   sub x' lookup yx y' lookup zy;
 } reorder;
 ```
