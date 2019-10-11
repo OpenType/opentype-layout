@@ -99,13 +99,19 @@ This behaves in exactly the same way as for a Mark to Base attachment.
 
 Marks may attach to other marks. Here attachment is much like for the Mark to
 Base. Marks may have shifts and advances just like bases. The only difference
-is that after all attachment is completed, the shift of a mark is ignored.
+is that after all attachment is completed, the calculated extra shift of a mark (`S`) is ignored.
 
 The effect of this approach to a long chain of stacked diacritics is that
 they will have to be attached twice. The first pass is done in reverse order
 with the latest mark attaching to the earlier in order to propagate all the
 width and shift onto the bottom mark. Then the marks are attached in
 conventional order. Long chains of spacing attachments are very rare.
+
+### Cursive Attachment (Type 3)
+
+The normal behaviour of cursive attachment is to set the advance of the second glyph to be the difference of the advance of the second and first glyph. Setting the space attach bit changes this behaviour such that if the resulting advance of the second glyph is < 0, it is set to 0.
+
+Notice where a base character is cursively attached to another base, for purposes of spacing attachment, the base is considered to be attached to the other base as if it were a mark. Thus extra space only occurs to the left of the first glyph in a cluster chain or after the last and not within the chain.
 
 ## Rationale
 
