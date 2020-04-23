@@ -2,7 +2,7 @@
 
 _By Adam Twardoch on 23 April 2020_
 
-This is a heavily-revised version of a proposal that I circulated in 2013 on the OpenType list. It had almost no response, but time passes and times change, so I’d like to pitch it again. This time, I’d like to suggest that the table could be adopted by the OpenType format officially, or could be unofficially adopted by some tool and client vendors.
+This is a heavily-revised version of a proposal that I circulated in 2013 on the OpenType list. It had almost no response, but time passes and times change, so I’d like to pitch it again. This time, I’d like to suggest that the table could be adopted by the **OpenType format officially**, or could be **unofficially adopted by some tool and client vendors**.
 
 I’d like to propose a new SFNT table `LABL`, which serves a function similar to the `name` table, but its records contain human-readable labels for the glyphs included in the font. Below is a short introduction of the idea, followed by a draft proposal of the actual table structure, along with some examples, and a loose commentary.
 
@@ -17,6 +17,14 @@ In the past years, we have observed a true surge in *icon fonts*, where prima
 For many years, there’s been a large number of symbol or dingbat fonts on the market, here’s just a [small sample](http://myfonts.us/a3rlZP). But it’s really around 2013 where “symbol fonts” seem to have taken off properly, with [FontAwesome](https://fontawesome.com/), Google’s [Material Icons](https://material.io/resources/icons/), Apple’s [SF Symbols](https://developer.apple.com/design/human-interface-guidelines/sf-symbols/overview/), and various collections like [IcoMoon](https://icomoon.io/), [Iconify](https://iconify.design/), [Fontello](http://fontello.com/), [Fontastic](http://fontastic.me/) and many others.
 
 One problem with symbol fonts is that OpenType hasn’t proposed a sensible method to include human-readable descriptions of the glyphs included in the font.
+
+Also: most font editing apps (FontLab, Glyphs, RoboFont, FontForge) allow type designers to use glyph names during font development that don’t conform with the strict [Adobe Glyph Naming](https://github.com/adobe-type-tools/agl-aglfn/) recommendations. The development glyph names are stored inside development font formats such as [UFO](http://unifiedfontobject.org/), [`.glyphs`](https://github.com/schriftgestalt/GlyphsSDK/blob/master/GlyphsFileFormat.md) or [`.vfj`](https://github.com/kateliev/vfjLib/).
+
+Some font vendors are interested to export those “development” glyph names into fonts. This proposal provides a simple place for development glyph names to exist within OpenType font files.
+
+Some fonts are made for text but include many glyph variants or ligatures. It’s extremely cumbersome for app vendors to “map back” particular glyphs to their textual content. Client apps could use this table to map unencoded glyphs to their text representation in “Glyphs palette” types of scenarios.
+
+## Proposal
 
 I’d like to propose a simple idea how to solve this problem. The proposal for the `LABL` table (“Glyph labels table”) comes in two **variants**. Both variants can supply labels only for a few glyphs in the font, or for many, or for all of them:
 
