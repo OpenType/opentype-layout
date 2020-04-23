@@ -2,15 +2,13 @@
 
 _By Adam Twardoch on 23 April 2020_
 
-This is a proposal that I circulated in 2013 on the OpenType list. It had almost no response, but time passes and times change, so I’d like to pitch it again.
+This is a heavily-revised version of a proposal that I circulated in 2013 on the OpenType list. It had almost no response, but time passes and times change, so I’d like to pitch it again. This time, I’d like to suggest that the table could be adopted by the OpenType format officially, or could be unofficially adopted by some tool and client vendors.
 
-This time, I’d like to suggest that the table could be adopted by the OpenType format officially, or could be unofficially adopted by some tool and client vendors.
-
-I’d like to propose a new SFNT table `LABL`, which will map glyph IDs to `name` table records which contain human-readable labels for the glyphs.
-
-Below is a short introduction of the idea, followed by a draft proposal of the actual table structure, along with some examples, and a loose commentary.
+I’d like to propose a new SFNT table `LABL`, which serves a function similar to the `name` table, but its records contain human-readable labels for the glyphs included in the font. Below is a short introduction of the idea, followed by a draft proposal of the actual table structure, along with some examples, and a loose commentary.
 
 ## Rationale
+
+> PostScript names are not enough, there are various legitimate cases where a font vendor would like to include human-readable descriptions for glyphs. My `LABL` proposal is very lightweight. It follows the structure of the `name` table so that all existing code that deals with the `name` table can be re-used with little or no adaptation. All all font parsers and tools can be made aware of the `LABL` table with little or no effort.
 
 In the past years, we have observed a true surge in *icon fonts*, where primarily web designers have been putting graphical symbols into fonts, and using them as UI web elements. The idea, of course, isn’t new. Quite likely, it’s been pioneered by Microsoft in their Marlett font which was used to draw certain UI elements in Windows 95.
 
@@ -18,164 +16,200 @@ For many years, there’s been a large number of symbol or dingbat fonts on 
 
 One problem with symbol fonts is that OpenType hasn’t proposed a sensible method to include human-readable descriptions of the glyphs included in the font.
 
-I’d like to propose a simple idea how to solve this problem.
+I’d like to propose a simple idea how to solve this problem. The proposal for the `LABL` table (“Glyph labels table”) comes in two **variants**. Both variants can supply labels only for a few glyphs in the font, or for many, or for all of them:
 
-## `LABL` table: Label to Glyph Index Mapping Table
+- **Variant A** is extremely simple to implement: it’s identical in structure to the `name` table. However, it’s not so space-efficient, because each record includes the `platformID` and `encodingID` fields.
+- **Variant B** is inspired by the existing `name` and `cmap` and `post` tables, but is not identical to them. It is more space-efficient.
 
-This table defines the mapping of human-readable names (or “labels”) to the glyph index values used in the font.
+**We should choose either Variant A or Variant B.**
+
+# `LABL`: Glyph labels table
+
+This table maps human-readable names (“labels”) to the glyph index values used in the font. The table may contain more than one glyph labeling scheme (“vocabulary”).
 
 The purpose of this table is to provide application developers with the ability to present to users meaningful human-readable labels for glyphs, especially if the glyphs are non-textual. Application developers could also utilize this table to produce an alternative input method where the user could type in a portion of a label and then, the input text would be searched for in the `LABL` table, and matching glyphs from the current font (or from a selection of fonts) could be presented to the user for final input. Also, the labels could be used to aid accessibility by providing a plain-text description of otherwise graphical glyphs.
 
-The `LABL` table may contain more than one subtable, in order to support more than one glyph labeling scheme (or “vocabulary”).
+## `LABL` table Variant A
 
-The overall structure of the `LABL` table mimicks the structure of the [`cmap`](https://docs.microsoft.com/en-us/typography/opentype/spec/cmap) table closely, and it re-uses some of the formats defined by the `cmap` table.
+The structure of the labels table is identical to the OpenType naming table ([`name`](https://docs.microsoft.com/en-us/typography/opentype/spec/name). The labels table interprets some fields differently to the naming table.
 
-While the `cmap` table maps numerical character codes (Unicode codepoints or other numerical codes) to glyph indices, the `LABL` table maps [`name`](https://docs.microsoft.com/en-us/typography/opentype/spec/name) table record indices to glyph indices.
+### Labels table header
 
-The following `cmap` subtable formats are permissible in the `LABL` table:
+The labels table header is identical to the Naming table header. There are two formats for the Labels table, except that `LabelRecord` in used instead of a `NameRecord`:
 
-- [Format 0](https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#format-0-byte-encoding-table) (Byte encoding table), with a slightly modified behavior (see
-  NOTE below)
-- [Format 4](https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#format-4-segment-mapping-to-delta-values) (Segment mapping to delta values) \*
-- [Format 6](https://docs.microsoft.com/en-us/typography/opentype/spec/cmap#format-6-trimmed-table-mapping) (Trimmed table mapping)
-- Potentially also other `cmap` subtable formats, if considered useful.
+- [Format 0](https://docs.microsoft.com/en-us/typography/opentype/spec/name#naming-table-format-0) uses platform-specific, numeric language identifiers.
+- [Format 1](https://docs.microsoft.com/en-us/typography/opentype/spec/name#naming-table-format-1) allows for use of language-tag strings to indicate the language of strings.
 
-## `LABL` table structure
+Both formats include variable-size string-data storage, and an array of label records.
 
-The `LABL` Table is organized as follows:
+### LabelRecord: Label records
 
-### `LABL` Header
+The label records follow the structure of the [Name Records](https://docs.microsoft.com/en-us/typography/opentype/spec/name#name-records) of the Naming table. However, the labels table uses slightly different identifiers.
 
-| Type   | Name      | Description                           |
-| ------ | --------- | ------------------------------------- |
-| USHORT | version   | Table version number (0).             |
-| USHORT | numTables | Number of mapping tables that follow. |
+| Type       | Name           | Description                                                      |
+| ---------- | -------------- | ---------------------------------------------------------------- |
+| _uint16_   | `vocabularyID` | Vocabulary ID instead of `name.platformID`                       |
+| _uint16_   | `encodingID`   | Vocabulary-specific sub-identifier, instead of `name.encodingID` |
+| _uint16_   | `languageID`   | Language ID, same as `name.languageID`                           |
+| _uint16_   | `glyphID`      | Glyph ID, instead of `name.nameID`                               |
+| _uint16_   | `length`       | String length (in bytes).                                        |
+| _Offset16_ | `offset`       | String offset from start of storage area (in bytes).             |
 
-### `LABL` Mapping Record
+By default, all strings are assumed to use Unicode **UTF-16BE** encoding.
 
-The `LABL` table header is followed by an array of mapping records that specify the particular mapping and the offset to the subtable for that mapping. The number of mapping records is numTables. A mapping record entry looks like:
+- The `vocabularyID` identifier is used in the way discussed below.
+- The `encodingID` may be used as a vocabulary-specific sub-identifier, for example for a major version of a particular vocabulary. If not meaningful, it should be `0`.
 
-| Type   | Name       | Description                                                           |
-| ------ | ---------- | --------------------------------------------------------------------- |
-| USHORT | platformID | Platform ID, always set to 5.                                         |
-| USHORT | encodingID | Platform-specific encoding ID ("Vocabulary ID").                      |
-| ULONG  | offset     | Byte offset from beginning of table to the subtable for this mapping. |
+## `LABL` table Variant B
 
-### `LABL` Subtable Header
+The `LABL` table borrows some concepts from the ([`name`](https://docs.microsoft.com/en-us/typography/opentype/spec/name) and [`cmap`](https://docs.microsoft.com/en-us/typography/opentype/spec/cmap) tables.
 
-Each mapping subtable has the following format:
+### Labels table header
 
-| Type   | Name     | Description                                  |
-| ------ | -------- | -------------------------------------------- |
-| USHORT | format   | Format number, set to 0, 4 or 6.             |
-| USHORT | length   | This is the length in bytes of the subtable. |
-| USHORT | language | always set to 0.                             |
+The labels table is organized as follows:
 
-Then, the mapping of numerical IDs (which refer to the `name` table IDs) to glyph IDs follows, using structures defined by the `cmap` subtable formats 0, 4 or 6.
+| Type            | Name                          | Description                                                             |
+| --------------- | ----------------------------- | ----------------------------------------------------------------------- |
+| _uint16_        | `version`                     | Table version (`0`).                                                    |
+| _uint16_        | `numTables`                   | Number of subtables.                                                    |
+| _Offset32_      | `stringOffset`                | Offset to start of storage area (from start of table).                  |
+| _LabelSubtable_ | `labelSubtable[count]`        | The label subtables where count is the number of subtables.             |
+| _uint16_        | `langTagCount`                | Number of language-tag records.                                         |
+| _LangTagRecord_ | `langTagRecord[langTagCount]` | The language-tag records where `langTagCount` is the number of records. |
+| (Variable)      |                               | Storage for the actual string data.                                     |
 
-_NOTE: For the `LABL` subtable format 0, the value 256 is added to each index of the mapping array to retrieve the corresponding `name` table ID. So item 0 of the array corresponds to name table ID 256, item 1 corresponds to name table ID 257 and so forth. For other subtable formats, the numerical codes correspond to name table IDs directly._
+The `LABL` table header is followed by an array of label subtables, one per vocabulary. Each subtable specifies label records that map glyph IDs to the associated strings. The number of vocabulary subtables is `numTables`.
 
-### Platform ID, Encoding ID, Language ID
+The `langTagCount` and `langTagRecord` array is identical to the one used in `name` table [format 1](https://docs.microsoft.com/en-us/typography/opentype/spec/name#naming-table-format-1).
 
-The Platform ID and Encoding ID values defined in the `LABL` table must correspond directly to the Platform ID and Encoding ID values defined in the `name` table. The Language ID in the `LABL` subtables is always set to 0, but in the `name` table, language-specific IDs are used.
+### LabelSubtable: Label vocabulary subtable
 
-#### Platform ID
+A label vocabulary subtable looks as follows:
 
-A new Platform ID = 5 is defined for the purpose of glyph labeling. The `LABL` table always uses the Platform ID 5. Glyph labels defined in the `name` table must also use the Platform ID 5 accordingly.
+| Type          | Name                 | Description                                               |
+| ------------- | -------------------- | --------------------------------------------------------- |
+| _uint16_      | `vocabularyID`       | Vocabulary ID                                             |
+| _uint16_      | `languageID`         | Language ID.                                              |
+| _uint16_      | `count`              | Number of label records.                                  |
+| _LabelRecord_ | `labelRecord[count]` | The label records where `count` is the number of records. |
 
-#### Language ID
+#### vocabularyID
 
-The Language ID in each `LABL` subtable must always be set to 0.
+The `vocabularyID` identifier is used in the way discussed below.
 
-The Language IDs for the `name` table records which are referred to by the `LABL` table must use the same mechanism as the _platform ID = 3_ language identifiers, i.e. either the Windows Language IDs or, if `name` table format 1 is used, also the language tags.
+#### languageID
 
-For language-neutral labels, the `name` table records should use Language ID 0×0409 (U.S. English).
+If a `languageID` is less than `0x8000`, it uses the same mechanism as the `platformID` 3 language identifiers in the `name` table.
 
-#### Encoding ID
+If a `languageID` is equal to or greater than `0x8000`, it is associated with a language-tag record (LangTagRecord) that references a language-tag string.
 
-In the context of the `LABL` table, the Encoding ID represents a **“Vocabulary ID”**.
+For language-neutral labels, the `name` table records should use `languageID` `0x0409` (U.S. English).
 
-- Vocabulary ID 0 is defined as “text contents”.
-- Vocabulary ID 1 is defined as “private vocabulary”.
-- Vocabulary ID 2 is defined as “vendor-specific vocabulary”.
-- Vocabulary IDs > 2 are registered by the specification maintainer.
+### LabelRecord: Label records
 
-A label defined for the Vocabulary ID 0 defines the actual text which the labeled glyph represents, expressed as a Unicode UTF-16BE string.
+| Type       | Name      | Description                                          |
+| ---------- | --------- | ---------------------------------------------------- |
+| _uint16_   | `glyphID` | Glyph ID                                             |
+| _uint16_   | `length`  | String length (in bytes).                            |
+| _Offset32_ | `offset`  | String offset from start of storage area (in bytes). |
 
-By default, Vocabulary ID 0 labels are language-neutral, so they use Language ID 0×0409, however, localized labels are permissible. _If glyphs are mapped in the Unicode `cmap` table (3.1 or 3.10), it’s usually not necessary to provide labels. However, text glyphs only accessible via OpenType Layout features or other such mechanisms may use labels. from the Vocabulary ID 0._
+Within one label vocabulary subtable, a `glyphID` may be used only once.
 
-Labels defined for the Vocabulary ID 1 can be formed freely by any font vendor, and do not need to adhere to any rules, conventions or standards.
+Unless there are other recommendations for a particular `vocabularyID`, it is assumed that:
 
-Labels defined for the Vocabulary ID 2 can be formed freely by any font vendor, but the assumption is made that each font vendor (as identified by the achVendID code in the OS/2 table) maintains some sort of vocabulary to which the defined labels adhere.
+- Each label string is encoded using Unicode **UTF-16BE** (_Note: this is debatable, could be **UTF-8 without BOM**_ instead).
+- U.S. English or language-neutral labels should use no leading or trailing spaces, common words should be spelled in all-lowercase (while proper nouns or abbreviations using the appropriate normal-text casing), and little or no punctuation should be used.
 
-Labels defined for the Vocabulary IDs > 2 need to be formed according to the vocabulary maintained by the registered entity.
+## vocabularyID
 
-Some Vocabulary IDs which might be proposed for registration:
+Where the `name` records uses a `platformID`, the `LABL` table uses a `vocabularyID`.
 
-- Vocabulary ID 3: Wikipedia (http://www.wikipedia.org/)
+| Value  | Description                                |
+| ------ | ------------------------------------------ |
+| `0`    | text contents                              |
+| `1`    | private vocabulary                         |
+| `2`    | development glyph names                    |
+| `3`    | vendor-specific vocabulary                 |
+| `4-15` | reserved                                   |
+| `>15`  | registered by the specification maintainer |
 
-Any label mapped to a glyph and registered in the Vocabulary ID 3 (Wikipedia) should be spelled exactly like the title of the Wikipedia article which corresponds to that label in the appropriate language.
+### vocabularyID 0: Text contents
 
-- Vocabulary ID 4: The Noun Project (http://thenounproject.com/)
+A label in the vocabularyID 0 defines the actual text which the labeled glyph represents, expressed as a Unicode string.
 
-Any label mapped to a glyph and registered in the Vocabulary ID 4 (The Noun Project) should be spelled exactly like the title of the entry on The Noun Project which corresponds to that label in the appropriate language.
+By default, vocabularyID 0 labels are language-neutral, so they use Language ID `0x0409`, however, localized labels are permissible.
 
-- Vocabulary ID 5: The Medieval Unicode Font Initiative (http://www.mufi.info/)
+If glyphs are mapped in the Unicode `cmap` table (3.1 or 3.10), label records for them are not necessary. However, text glyphs only accessible via OpenType Layout features or other such mechanisms, such as ligatures or alternate glyphs, may use labels from the vocabularyID 0. Client apps can use the vocabularyID labels to map glyphs to their text representation.
+
+### vocabularyID 1: Private vocabulary
+
+Labels in vocabularyID 1 can be formed freely by any font vendor, and do not need to adhere to any rules, conventions or standards. It is recommended that strings in the private vocabulary use Unicode encoding, but vendors may choose to use other means to interpret the data.
+
+### vocabularyID 2: Development glyph names
+
+Most font editing apps (FontLab, Glyphs, RoboFont, FontForge) allow type designers to use glyph names during font development that don’t conform with the strict [Adobe Glyph Naming](https://github.com/adobe-type-tools/agl-aglfn/) recommendations. The development glyph names are stored inside development font formats such as [UFO](http://unifiedfontobject.org/), [`.glyphs`](https://github.com/schriftgestalt/GlyphsSDK/blob/master/GlyphsFileFormat.md) or [`.vfj`](https://github.com/kateliev/vfjLib/).
+
+Some font vendors are interested to export those “development” glyph names into fonts. Labels in the vocabularyID 2 allow them to.
+
+### vocabularyID 3: Vendor-specific vocabulary
+
+Labels in the vocabularyID 2 can be formed freely by any font vendor, but the assumption is made that each font vendor (as identified by the achVendID code in the OS/2 table) maintains some sort of vocabulary to which the defined labels adhere.
+
+### Other vocabularyIDs
+
+Labels defined for the vocabularyIDs > 15 need to be formed according to the vocabulary maintained by the registered entity. Below, I’m giving loose examples of vocabularyIDs which might be proposed for registration.
+
+#### vocabularyID 15: [Wikipedia](https://www.wikipedia.org/)
+
+Any label mapped to a glyph and registered in the vocabularyID 3 (Wikipedia) should be spelled exactly like the title of the Wikipedia article which corresponds to that label in the appropriate language.
+
+#### vocabularyID 16: [The Noun Project](https://thenounproject.com/)
+
+Any label mapped to a glyph and registered in the vocabularyID 4 (The Noun Project) should be spelled exactly like the title of the entry on The Noun Project which corresponds to that label in the appropriate language.
+
+#### vocabularyID 17: [The Medieval Unicode Font Initiative](http://www.mufi.info/)
 
 Labels would be formed according to the “descriptive name” used within the Medieval Unicode Font Initiative.
 
-- Vocabulary ID 6: SIL (http://scripts.sil.org/SILPUAassignments)
+#### vocabularyID 18: [SIL](http://scripts.sil.org/SILPUAassignments)
 
 Labels would be formed according to the “descriptive name” used within SIL, especially for glyphs not accessible through OpenType Layout but instead accessible through the SIL Graphite layout system.
 
-### Name records for glyph labels
+### Optional: vocabularyID ???: Development metadata
 
-Each `name` table record for a glyph label is encoded using Unicode UTF-16BE.
+_Note: this is debatable, and perhaps this should not be included at all._
 
-Unless there are other recommendations for a particular Vocabulary ID, it is recommended that for U.S. English labels, no leading or trailing spaces, should be used, common words be spelled in all-lowercase (while proper nouns or abbreviations using the appropriate normal-text casing), and little or no punctuation be used unless necessary.
+Any record with vocabularyID must have `encodingID` 0 and `languageID` 0.
 
-Within each vocabulary, multiple `name` records can point to the same glyph, thus allowing one glyph to have multiple labels. It is up to the application developer how to prioritize looking up within multiple vocabularies and how to present user-readable labels to the user if a glyph has
-multiple labels assigned.
+A label in this vocabularyID must be a valid JSON dictionary, encoded as UTF-8 without BOM.
+
+It is recommended that the keys in the dictionary follow the [UFO reverse domain naming scheme](http://unifiedfontobject.org/versions/ufo3/conventions/#reverse-domain-naming-schemes).
+
+Vendors may use labels with vocabularyID 4 to store glyph-specific metadata intended for font development. For example, the JSON data may epxress the contents of the [GLIF lib](http://unifiedfontobject.org/versions/ufo3/glyphs/glif/).
 
 ## Examples
 
 ### Example 1. “Basketball” glyph
 
-Let’s assume that the glyph with the glyph ID 34 represents a ball for playing basketball. In that case:
+Let’s assume that the glyph with the `glyphID` 34 represents a ball for playing basketball. In that case:
 
-The `LABL` subtable with the PID 5 and EID 1 (= private vocabulary) could contain an entry mapping glyph ID 34 to the `name` table record 290.
+A `LABL` entry with `vocabularyID` 1 (= private vocabulary) and `languageID` `0x0409` could map `glyphID` 34 to the string with the contents `basketball`, conforming with the “all lowercase” recommendation for general labels.
 
-A “private vocabulary” record could exist in the `name` table (NID 290, PID 5, EID 1, LID 0×0409) with the contents “basketball”, conforming with the “all lowercase” recommendation labels cited above.
+Another `LABL` entry with `vocabularyID` 15 (= Wikipedia) and `languageID` `0x0409` could map `glyphID` 34 to a string with the contents `Basketball (ball)`, because that is the title of the English Wikipedia article describing the ball for playing basketball: `https://en.wikipedia.org/wiki/Basketball_(ball)`
 
-An additional `LABL` subtable with the PID 5 and EID 3 (= Wikipedia) could exist that would contain an entry mapping glyph ID 34 to the `name` table record 268.
+Another `LABL` entry with `vocabularyID` 15 (= Wikipedia) and `languageID` `0x0407` (German) could map the glyph to a string `Basketball (Sportgerät)`, as this is the title of the corresponding German Wikipedia article: `https://de.wikipedia.org/wiki/Basketball_(Sportger%C3%A4t)`
 
-Then, the `name` table record could exist (NID 268, PID 5, EID 3 = Wikipedia, LID 0×0409 = U.S. English), and with the following contents (without the quotes): “Basketball (ball)”. This is because that is the title of the English Wikipedia article describing the ball for playing basketball: http://en.wikipedia.org/wiki/Basketball_(ball)
+Finally, an additional `LABL` entry with `vocabularyID` 16 (= The Noun Project) could map the `glyphID` 34 to the string `Basketball`, which is the title of the English entry on The Noun Project: `https://thenounproject.com/noun/basketball/`
 
-Another `name` table record could exist (NID 268, PID 5, EID 3 = Wikipedia, LID 0×0407 = German) with the contents “Basketball (Sportgerät)” as this is the title of the corresponding German Wikipedia article: http://de.wikipedia.org/wiki/Basketball_(Sportger%C3%A4t)
+### Example 2: “FontLab” logotype
 
-Finally, an additional `LABL` subtable with the PID 5 and EID 4 (= The Noun Project) could exist that would contain an entry mapping glyph ID 34 to the `name` table record 332.
+If the glyph with `glyphID` 36 contains the logotype which represents the word `FontLab`, then that glyph may be accessible through the OpenType Layout feature `liga` or `dlig` as a ligature of the glyphs `/F/o/n/t/L/a/b`.
 
-Another `name` table record could exist (NID 332, PID 5, EID 4 = The Noun Project, LID 0×0409), with the following contents: “Basketball”. This is because that is the title of the English entry on The Noun Project: http://thenounproject.com/noun/basketball/
-
-### Example 2: “Soccer field” glyph
-
-If the glyph with the glyph ID 35 represents a soccer field, then the `LABL` subtable with the PID 5 and EID 1 could contain an entry mapping glyph ID 34 to the `name` table record 291, the `LABL` subtable (PID 5, EID 3) could map the glyph to the `name` table record 453, and the `LABL` subtable (PID 5, EID 4) could map the glyph to the `name` table record 453 as well.
-
-In that case: NID 291 PID 5 EID 1 LID 0×0409: “soccer field” NID 453 PID 5 EID 3 LID 0×0409: “Association football pitch” → http://en.wikipedia.org/wiki/Association_football_pitch NID 453 PID 5 EID 4 LID 0×0409: “Soccer Field” → http://thenounproject.com/noun/soccer-field/
-
-Since the soccer field does not currently have a separate Wikipedia article, it would not be possible to construct a proper label in the Vocabulary ID 3, LID 0×0407.
-
-### Example 3: “FontLab” logotype
-
-If the glyph with the glyph ID 36 contains the logotype which represents the word “FontLab”, then that glyph will probably be accessible through the OpenType Layout feature “liga” or “dlig” as a ligature of the glyphs /F/o/n/t/L/a/b.
-
-However, in addition, the `LABL` subtable with the PID 5 and EID 0 (= text contents) could exist, which could map the glyph ID 36 to the `name` ID 259. In that case, the `name` table could contain the record NID 259 PID 5 EID 0 LID 0×0409: “FontLab”.
-
-If EID 0 labels (“text contents”) are included for all glyphs in a font which are not encoded in the `cmap` table directly, then applications could provide meaningful glyph input methods or labels for glyphs without having to reverse engineer GSUB substitutions. This technique could be used for glyph variants, ligatures or more complex “wordglyphs” or “logoglyphs”.
+A `LABL` entry with `vocabularyID` 0 (= text contents) and `languageID` `0x0409` could exist that maps this glyph to the string `FontLab`.
 
 ## Discussion
 
-In the above proposal, some portions (such as the concept of Vocabulary IDs, and in particular the registered Vocabulary IDs and the “text contents” EID 0), are optional, and could be “done away with” if the community deems it too complex. I’m kind of keen on at least keeping two EIDs: 0 for “text contents” and 1 for “private labels”.
+In the above proposal, some portions (such as the concept of vocabularyIDs, and in particular the registered vocabularyIDs and the “text contents” vocabularyID 0), are optional, and could be “done away with” if the community deems it too complex. I’m kind of keen on at least keeping two vocabularyIDs: 0 for “text contents” and 1 for “private labels”.
 
 I’m grateful to Laurence Penney for mentioning The Noun Project to me, and for his ideas that helped me formulate the “vocabulary” concept in this proposal.
 
@@ -198,13 +232,11 @@ But OK. We do have the Unicode Standard. It’s not perfect, but it’s fine 
 Of course OpenType fonts do have the concept of “glyph names”, i.e. the PostScript glyph names -- but their role has been long overloaded, especially since the Adobe-recommended practice has been established where the names should mimick Unicode codepoints using the “uniXXXX” convention. So,
 PostScript glyph names are not in any way descriptive, really. But the fact that in original PostScript glyphs were keyed by name rather than number is telling — it tells us about human nature.
 
-### Humans like words better than they like numbers.
+> Humans like words better than they like numbers.
 
 Computers, of course, like numbers better than they like words. But typography, digital text -- is actually _primarily_ a tool for _communications between humans_ these days. It’s far less about computers than some software engineers might think.
 
-Even if SVG is supported in all browsers, this does not remove the usefulness of having glyph labels. First of all, SVG glyphs can be included in SFNT fonts (a proposal and an implementation already exist), so it seems obvious that people still are interested in having SVG symbols _organized_ in some way.
-
-I think what you’re missing is that a font is not _just_ a collection of symbols. It’s a collection of symbols that, through layout systems, establishes logical and spatial relationships between these symbols. Inside a font, you can define what should happen if certain symbols occur in a sequence, under what circumstances different variants are used, and what is the spacing behavior of these symbols in relation to each other. That’s something you won’t easily implement in a cross-platform way if you just have a “bag of loose SVG graphics”. Also, fonts have (and will even more in future) a mechanism for choosing size-specific variants of the same symbol, so you won’t have to rely on linear scaling, which often produces optically sub-par results.
+Now that `SVG` is part of OpenType, it’s more likely than ever that fonts will be used as an efficient storage for non-textual symbols. A font is not _just_ a collection of symbols. It’s a collection of symbols that, through layout systems, establishes logical and spatial relationships between these symbols. Inside a font, you can define what should happen if certain symbols occur in a sequence, under what circumstances different variants are used, and what is the spacing behavior of these symbols in relation to each other. That’s something you won’t easily implement in a cross-platform way if you just have a “bag of loose SVG graphics”. Also, fonts have (and will even more in future) a mechanism for choosing size-specific variants of the same symbol, so you won’t have to rely on linear scaling, which often produces optically sub-par results.
 
 We have at least three layout systems on the market (OpenType Layout, AAT, SIL Graphite), and none of them provides a fully adequate mechanism to provide explanatory metadata to all kinds of glyph variants the font may have.
 
@@ -212,7 +244,7 @@ Glyph labeling is very useful for the textual context as well. Imagine a simp
 
 The same goes for other kinds of specially-formed glyph variants, where the designer might want to embed some useful information about what particular glyphs are useful for, what’s their stylistic treatment etc.
 
-And we have the “lookup by name” issue. That’s where the Vocabulary idea (which was suggested by Laurence) comes in: any entity could establish a Vocabulary and register it. Then, they could publish their vocabulary and the corresponding expected symbols. For example, an organization of map
+And we have the “lookup by name” issue. That’s where the vocabularyID idea (which was suggested by Laurence) comes in: any entity could establish a Vocabulary and register it. Then, they could publish their vocabulary and the corresponding expected symbols. For example, an organization of map
 rendering services could agree on a vocabulary for symbols used on maps. Then, font vendors could develop various fonts for use on maps, and if they label their glyphs using the mapping Vocabulary, the notion of switching the style of a map would be simple — the glyphs in a font could be looked up
 using the mapping Vocabulary labels, and then, when the font is switched, a different set of symbols could be used. This could would be much more sensible to implement than doing all kinds of “corporate use of the PUA” kinds of hackery (which still could be done of course).
 
@@ -224,9 +256,6 @@ Another example is mathematical typesetting: regardless of whether a typesett
 typesetting, and embedded them into their fonts. Other mathematical font vendors could follow that. This would aid switching fonts, providing better fallback scenarios or even just developing new math fonts (because the labels would be helpful for other font developers to understand the nature of a particular glyph).
 
 There is a large number of legitimate usage scenarios for fonts where labels are better than numbers. Either to look up glyphs by label, or to display the label to the user.
-
-My proposal aims to be lightweight. It re-uses data structures from the `cmap` table, and makes use of the long-established `name` table, so implementers don’t need to develop practically any new code (at least in the portion of parsing the font). I tried to make the proposal not too much
-over the top, yet I tried to ensure that several useful scenarios are catered for.
 
 ### Earlier proposals, `Zapf` table
 
@@ -241,7 +270,7 @@ With the recent discussion of color font formats, I’ve heard one recurring wo
 
 So, when writing the `LABL` proposal, I tried to learn from the lack of adoption of `Zapf` and from the overall warm welcome of the `COLR/CPAL` proposal. I tried to make the structure clean and simple to use.
 
-I tried to create a structure that is a bit modular — e.g. the concept of registered Vocabulary IDs is sort of optional. If the community finds that aspect too much of a complication, it can be removed (leaving only one or two hardcoded Encoding IDs) without invalidating the entire structure. Analogically, if the community decides to drop that idea now but revisits it in future, the notion of adding an extra Encoding ID is easy and won’t break previous implementations.
+I tried to create a structure that is a bit modular — e.g. the concept of registered vocabularyIDs is sort of optional. If the community finds that aspect too much of a complication, it can be removed (leaving only one or two hardcoded Encoding IDs) without invalidating the entire structure. Analogically, if the community decides to drop that idea now but revisits it in future, the notion of adding an extra Encoding ID is easy and won’t break previous implementations.
 
 Plus, the Vocabulary concept allows for a clean separation: each vocabulary exists in a separate LABL subtable, therefore a font developer can easily set up, say, 30 labels within one particular vocabulary, and then 150 labels within another vocabulary, independently of each other. This is something I learned to like about `cmap` — that each `cmap` subtable can really be handled separately. These days, only the cmap 3.x is of relevance, but the fact that you can “safely” add or remove 0.x, 1.x or 4.x cmap subtables without interfering with the 3.x subtable, and that these subtables could address different subsets of the glyphset, always was appealing to me.
 
@@ -254,4 +283,5 @@ The only administrative overhead resulting from my proposal will be the mainte
 Of course, the maintenance of the actual vocabularies or “policing” semantic conformance of the labels to a particular vocabulary is completely out of scope of the spec — just like it is out of scope of the spec to ensure that, in a particular font, the glyph with the Unicode U+0041 really depicts an uppercase “A”.
 
 Regards,
-Adam Twardoch
+
+> Adam Twardoch
