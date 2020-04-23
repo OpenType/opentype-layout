@@ -6,6 +6,8 @@ This is a heavily-revised version of a proposal that I circulated in 2013 on the
 
 I’d like to propose a new SFNT table `LABL`, which serves a function similar to the `name` table, but its records contain human-readable labels for the glyphs included in the font. Below is a short introduction of the idea, followed by a draft proposal of the actual table structure, along with some examples, and a loose commentary.
 
+To discuss this, I suggest the [https://github.com/twardoch/opentype-layout/issues/1](issue on my repo).
+
 ## Rationale
 
 > PostScript names are not enough, there are various legitimate cases where a font vendor would like to include human-readable descriptions for glyphs. My `LABL` proposal is very lightweight. It follows the structure of the `name` table so that all existing code that deals with the `name` table can be re-used with little or no adaptation. All all font parsers and tools can be made aware of the `LABL` table with little or no effort.
