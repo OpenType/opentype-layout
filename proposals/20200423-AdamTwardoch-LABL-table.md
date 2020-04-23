@@ -6,7 +6,7 @@ This is a heavily-revised version of a proposal that I circulated in 2013 on the
 
 I’d like to propose a new SFNT table `LABL`, which serves a function similar to the `name` table, but its records contain human-readable labels for the glyphs included in the font. Below is a short introduction of the idea, followed by a draft proposal of the actual table structure, along with some examples, and a loose commentary.
 
-To discuss this, I suggest the [https://github.com/twardoch/opentype-layout/issues/1](issue on my repo).
+To discuss this, I suggest the [issue on my repo](https://github.com/twardoch/opentype-layout/issues/1).
 
 ## Rationale
 
