@@ -201,11 +201,11 @@ Another `LABL` entry with `vocabularyID` 15 (= Wikipedia) and `languageID` `0x0
 
 Finally, an additional `LABL` entry with `vocabularyID` 16 (= The Noun Project) could map the `glyphID` 34 to the string `Basketball`, which is the title of the English entry on The Noun Project: `https://thenounproject.com/noun/basketball/`
 
-### Example 2: “FontLab” logotype
+### Example 2: “AcmeCo” logotype
 
-If the glyph with `glyphID` 36 contains the logotype which represents the word `FontLab`, then that glyph may be accessible through the OpenType Layout feature `liga` or `dlig` as a ligature of the glyphs `/F/o/n/t/L/a/b`.
+If the glyph with `glyphID` 36 contains the logotype which represents the word `AcmeCo`, then that glyph may be accessible through the OpenType Layout feature `liga` or `dlig` as a ligature of the glyphs `/A/c/m/e/C/o`.
 
-A `LABL` entry with `vocabularyID` 0 (= text contents) and `languageID` `0x0409` could exist that maps this glyph to the string `FontLab`.
+A `LABL` entry with `vocabularyID` 0 (= text contents) and `languageID` `0x0409` could exist that maps this glyph to the string `AcmeCo`.
 
 ## Discussion
 
