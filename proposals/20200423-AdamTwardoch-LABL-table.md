@@ -90,7 +90,7 @@ I’d like to propose a simple idea how address this problem. The proposal for
 
 **We should choose either Variant A or Variant B.**
 
-# `LABL`: Glyph labels table
+## `LABL`: Glyph labels table
 
 This table maps human-readable names (“labels”) to the glyph index values used in the font. The table may contain more than one glyph labeling scheme (“vocabulary”).
 
