@@ -10,17 +10,80 @@ To discuss this, I suggest the [issue on my repo](https://github.com/twardoch/op
 
 ## Rationale
 
-PostScript names are not enough, there are various legitimate cases where a font vendor would like to include human-readable descriptions for glyphs. My `LABL` proposal is very lightweight. Font parsers and tools could be made aware of the `LABL` table with little effort.
+1. Humans like words better than they like numbers.
+2. Accessing glyphs via text labels rather than numbers is better for some fonts, especially symbol fonts.
+3. Text labels may be exposed to users to reveal additional info about particular glyphs.
+4. PostScript glyph names and encoding codepoints are not enough.
 
-1. In the past years, we have observed a true surge in *icon fonts*, where primarily web designers have been putting graphical symbols into fonts, and using them as UI web elements. The idea, of course, isn’t new. Quite likely, it’s been pioneered by Microsoft in their Marlett font which was used to draw certain UI elements in Windows 95. For many years, there’s been a large number of symbol or dingbat fonts on the market, here’s just a [small sample](http://myfonts.us/a3rlZP). But it’s really around 2013 where “symbol fonts” seem to have taken off properly, with [FontAwesome](https://fontawesome.com/), Google’s [Material Icons](https://material.io/resources/icons/), Apple’s [SF Symbols](https://developer.apple.com/design/human-interface-guidelines/sf-symbols/overview/), and various collections like [IcoMoon](https://icomoon.io/), [Iconify](https://iconify.design/), [Fontello](http://fontello.com/), [Fontastic](http://fontastic.me/) and many others. One problem with symbol fonts is that OpenType hasn’t proposed a sensible method to include human-readable descriptions of the glyphs included in the font.
+#### Text representation of unencoded glyphs
 
-2. Most font editing apps (FontLab, Glyphs, RoboFont, FontForge) allow type designers to use glyph names during font development that don’t conform with the strict [Adobe Glyph Naming](https://github.com/adobe-type-tools/agl-aglfn/) recommendations. The development glyph names are stored inside development font formats such as [UFO](http://unifiedfontobject.org/), [`.glyphs`](https://github.com/schriftgestalt/GlyphsSDK/blob/master/GlyphsFileFormat.md) or [`.vfj`](https://github.com/kateliev/vfjLib/). Some font vendors are interested to export those “development” glyph names into fonts. This proposal provides a simple place for development glyph names to exist within OpenType font files.
+Most fonts are made for text. Many include many glyph variants or ligatures. It’s extremely cumbersome for app vendors to “map back” particular glyphs to their textual content. Client apps could use the labels to map unencoded glyphs to their text representation in “Glyphs palette” types of scenarios, and present users with various alternatives to render a particular piece of text using a given font.
 
-3. Most fonts are made for text. Many include many glyph variants or ligatures. It’s extremely cumbersome for app vendors to “map back” particular glyphs to their textual content. Client apps could use this table to map unencoded glyphs to their text representation in “Glyphs palette” types of scenarios.
+If three glyphs with `glyphID` 194-196 contain three visual representations of a `sty` ligature, these glyphs will be most likely accessible through some combination of the OpenType Layout features `liga` or `dlig`, and `ssXX`. The labels table could map each of these three glyphs to the string `sty`. When the user enters the word “style”, a UI could present them with a set of “proposals” for that word that use these different glyphs. If an app uses that type of UI, it would be easier to check the text contents vocabulary of the font, alongside its `cmap` table, and compile the proposals from this data. Right now, a rather cumbersome parsing and gluing of `cmap` and `GSUB` is required.
+
+#### User-facing info about specific glyphs
+
+Glyph labeling is very useful for the textual context as well. Imagine a simple situation: you have a font which has two variants of the asterisk (`*`): one with six arms and another with five arms. You can encode one as a stylistic alternate of the other, but there isn’t really an easy way to provide the user with the information that the one glyph is “asterisk with six arms” and the other is “asterisk with five arms”.
+
+The same goes for other kinds of specially-formed glyph variants, where the designer might want to embed some useful information about what particular glyphs are useful for, what’s their stylistic treatment etc. Or maybe how a glyph should be used, that in a given implementation it works particularly well with some other glyphs or features, but not with others.
+
+#### Glyph discovery for symbol fonts
+
+Using fonts for non-textual content is a 500-years-old tradition. Borders, dingbats, mapping symbols and other kids of *repetitive* graphical units have a long tradition of being an equal part of the typesetting process just like textual characters. Also in the digital age, “symbol fonts” have always existed.
+
+A digital font can be viewed as a “database” or “collection” or symbols, which is organized in some way and has established logical and spatial relations between the symbols.
+
+The point of a *font* is not necessarily that it’s about _text_. Primarily, it’s about “movable type”, i.e. having a coordinated, automated system to reproduce repetitive graphical units on a surface.
+
+Using fonts for graphics _is_ very digital, especially if the graphics are repetitive symbols. If it’s your own self-portrait, then it’s not useful to be put inside of a font. But if it’s a graphical unit that appears more than once, or is supposed to interact in any significant way with text or other symbols — then fonts _are_ just about the right path.
+
+In the past years, we have observed a true surge in *icon fonts*, where primarily web designers have been putting graphical symbols into fonts, and using them as UI web elements. The idea, of course, isn’t new. Quite likely, it’s been pioneered by Microsoft in their Marlett font which was used to draw certain UI elements in Windows 95.
+
+For many years, there’s been a large number of symbol or dingbat fonts on the market, here’s just a [small sample](http://myfonts.us/a3rlZP). But it’s really around 2013 where “symbol fonts” seem to have taken off properly, with [FontAwesome](https://fontawesome.com/), Google’s [Material Icons](https://material.io/resources/icons/), Apple’s [SF Symbols](https://developer.apple.com/design/human-interface-guidelines/sf-symbols/overview/), and various collections like [IcoMoon](https://icomoon.io/), [Iconify](https://iconify.design/), [Fontello](http://fontello.com/), [Fontastic](http://fontastic.me/) and many others.
+
+In computer programming, collections of data items are traditionally accessed using two indexing systems: by number (lists, arrays) or by name (hash tables, dictionaries). It’s widely agreed that when you index by number (or numerical code), there is a need of some external entity to “explain” the encoding system. For that, we have the Unicode Standard.
+
+But the Unicode Standard falls short of providing a *complete* solution, because it requires that a symbol is registered in Unicode, and that’s a long process. And it’s actually quite OK, I don’t see why all kinds of symbols should find their way into the Unicode Standard.
+
+I’d go even further, and say that the Unicode Standard actually outreached its own goal a bit. I think that the notion of encoding _seven_ (or whatever) different kinds of right-pointing arrows is silly. Why not just one arrow? Or nineteen? Why seven? “RIGHT SQUIGGLE ARROW”, “RIGHT WAVE ARROW”, “NOTCHED LOWER RIGHT-SHADOWED WHITE RIGHTWARDS ARROW”, “BACK-TILTED SHADOWED WHITE RIGHTWARDS ARROW”, “HEAVY BLACK-FEATHERED RIGHTWARDS ARROW”… Ehem?
+
+But OK. We do have the Unicode Standard. It’s not perfect, but it’s fine for the most parts. But it’s “lookup by number” — a notion which is good for some applications but not really useful for others.
+
+Of course OpenType fonts do have the concept of “glyph names”, i.e. the PostScript glyph names — but their role has been long overloaded, especially since the Adobe-recommended practice has been established where the names should mimick Unicode codepoints using the `uniXXXX` convention. So,
+PostScript glyph names are not in any way descriptive, really. But the fact that in original PostScript glyphs were keyed by name rather than number is telling — it tells us about human nature.
+
+Computers, of course, like numbers better than they like words. So all fonts use some sort of numeric codes to access glyphs, but for symbol fonts, OpenType does not offer a sensible method to include human-readable descriptions of the glyphs included in the font.
+
+A symbol font might have a glyph that represents a ball for playing basketball. The labels table could map this glyph to a label `basketball` in one vocabulary, and perhaps to a label `Piłka do koszykówki` in another vocabulary or language.
+
+Font cataloging services could let then search users for glyphs that depict a particular symbol that isn’t a Unicode text character or an emoji. Right now it’s impossible to find a glyph which shows, say, a banana on MyFonts.
+
+Now that `SVG` is part of OpenType, it’s more likely than ever that fonts will be used as an efficient storage for non-textual symbols. A font is not _just_ a collection of symbols. It’s a collection of symbols that, through layout systems, establishes logical and spatial relationships between these symbols. Inside a font, you can define what should happen if certain symbols occur in a sequence, under what circumstances different variants are used, and what is the spacing behavior of these symbols in relation to each other. That’s something you won’t easily implement in a cross-platform way if you just have a “bag of loose SVG graphics”. Also, fonts have (and will even more in future) a mechanism for choosing size-specific variants of the same symbol, so you won’t have to rely on linear scaling, which often produces optically sub-par results.
+
+We have at least three layout systems on the market (OpenType Layout, AAT, SIL Graphite), and none of them provides a fully adequate mechanism to provide explanatory metadata to all kinds of glyph variants the font may have.
+
+Of course font developers could make accompanying documents which describe to the user what each symbol is. But there is no standardized way to make such documents, and such documents do not travel with the font. The idea behind the `LABL` proposal is to embed this metadata inside of the font, so it doesn’t get “lost” on its travels.
+
+#### Label-based input methods for symbol fonts
+
+This proposal includes a system where entities could register vocabularyIDs. The labels used in a particular vocabularyID could correspond to some published information.
+
+For example, an organization of map rendering services could agree on a vocabulary for symbols used on maps. Then, font vendors could develop various fonts for use on maps, and if they label their glyphs using the mapping Vocabulary, the notion of switching the style of a map would be simple — the glyphs in a font could be looked up using the mapping Vocabulary labels.
+
+When the font is switched, a different set of symbols could be used. This could would be much more sensible to implement than doing all kinds of “corporate use of the PUA” kinds of hackery (which still could be done of course).
+
+Another example is mathematical typesetting: regardless of whether a typesetting engine uses the Microsoft MATH table or some TeX typesetting technique or yet another way — I think it’d be useful if the mathematical players in the field (e.g. STIX) created a vocabulary for glyphs used in math
+typesetting, and embedded them into their fonts. Other mathematical font vendors could follow that. This would aid switching fonts, providing better fallback scenarios or even just developing new math fonts (because the labels would be helpful for other font developers to understand the nature of a particular glyph).
+
+#### Development glyph names
+
+Most font editing apps (FontLab, Glyphs, RoboFont, FontForge) allow type designers to use glyph names during font development that don’t conform with the strict [Adobe Glyph Naming](https://github.com/adobe-type-tools/agl-aglfn/) recommendations. The development glyph names are stored inside development font formats such as [UFO](http://unifiedfontobject.org/), [`.glyphs`](https://github.com/schriftgestalt/GlyphsSDK/blob/master/GlyphsFileFormat.md) or [`.vfj`](https://github.com/kateliev/vfjLib/).
+
+Some font vendors are interested to export those “development” glyph names into fonts. This proposal provides a simple place for development glyph names to exist within OpenType font files.
 
 ## Proposal
 
-I’d like to propose a simple idea how to solve this problem. The proposal for the `LABL` table (“Glyph labels table”) comes in two **variants**. Both variants can supply labels only for a few glyphs in the font, or for many, or for all of them:
+I’d like to propose a simple idea how address this problem. The proposal for the `LABL` table (“Glyph labels table”) comes in two **variants**. Both variants can supply labels only for a few glyphs in the font, or for many, or for all of them:
 
 - **Variant A** is extremely simple to implement: it’s identical in structure to the `name` table. However, it’s not so space-efficient, because each record includes the `platformID` and `encodingID` fields.
 - **Variant B** is inspired by the existing `name` and `cmap` and `post` tables, but is not identical to them. It is more space-efficient.
@@ -193,7 +256,13 @@ Vendors may use labels with vocabularyID 4 to store glyph-specific metadata int
 
 ## Examples
 
-### Example 1. “Basketball” glyph
+### Example 1: “sty” ligature
+
+If three glyphs with `glyphID` 194-196 contain three visual representations of a `sty` ligature, these glyphs will be most likely accessible through some combination of the OpenType Layout features `liga` or `dlig`, and `ssXX`. `LABL` entries with `vocabularyID` 0 (= text contents) and `languageID` `0x0409` could exist, and map these three glyphs to the string `sty`.
+
+When the user enters the word “style”, a UI could present them with a set of “proposals” for that word that use these different glyphs. If an app uses that type of UI, it would be easier to check the text contents vocabulary of the font, alongside its `cmap` table, and compile the proposals from this data. Right now, a rather cumbersome parsing and gluing of `cmap` and `GSUB` is required.
+
+### Example 2. “Basketball” glyph
 
 Let’s assume that the glyph with the `glyphID` 34 represents a ball for playing basketball. In that case:
 
@@ -205,7 +274,7 @@ Another `LABL` entry with `vocabularyID` 15 (= Wikipedia) and `languageID` `0x0
 
 Finally, an additional `LABL` entry with `vocabularyID` 16 (= The Noun Project) could map the `glyphID` 34 to the string `Basketball`, which is the title of the English entry on The Noun Project: `https://thenounproject.com/noun/basketball/`
 
-### Example 2: “AcmeCo” logotype
+### Example 3: “AcmeCo” logotype
 
 If the glyph with `glyphID` 36 contains the logotype which represents the word `AcmeCo`, then that glyph may be accessible through the OpenType Layout feature `liga` or `dlig` as a ligature of the glyphs `/A/c/m/e/C/o`.
 
@@ -213,55 +282,7 @@ A `LABL` entry with `vocabularyID` 0 (= text contents) and `languageID` `0x0409
 
 ## Discussion
 
-In the above proposal, some portions (such as the concept of vocabularyIDs, and in particular the registered vocabularyIDs and the “text contents” vocabularyID 0), are optional, and could be “done away with” if the community deems it too complex. I’m kind of keen on at least keeping two vocabularyIDs: 0 for “text contents” and 1 for “private labels”.
-
-I’m grateful to Laurence Penney for mentioning The Noun Project to me, and for his ideas that helped me formulate the “vocabulary” concept in this proposal.
-
-Using fonts for non-textual content is a 500-years-old tradition. Borders, dingbats, mapping symbols and other kids of *repetitive* graphical units have a long tradition of being an equal part of the typesetting process just like textual characters. Also in the digital age, “symbol fonts” have always existed.
-
-A digital font can be viewed as a “database” or “collection” or symbols, which is organized in some way and has established logical and spatial relations between the symbols.
-
-The point of a *font* is not necessarily that it’s about _text_. Primarily, it’s about “movable type”, i.e. having a coordinated, automated system to reproduce repetitive graphical units on a surface.
-
-So actually, using fonts for graphics _is_ very digital, especially if the graphics are repetitive symbols. If it’s your own self-portrait, then it’s not useful to be put inside of a font. But if it’s a graphical unit that appears more than once, or is supposed to interact in any significant way with text or other symbols — then fonts _are_ just about the right path.
-
-In computer programming, collections of data items are traditionally accessed using two indexing systems: by number (lists, arrays) or by name (hash tables, dictionaries). It’s widely agreed that when you index by number (or numerical code), there is a need of some external entity to “explain” the encoding system. For that, we have the Unicode Standard.
-
-But the Unicode Standard falls short of providing a *complete* solution, because it requires that a symbol is registered in Unicode, and that’s a long process. And it’s actually quite OK, I don’t see why all kinds of symbols should find their way into the Unicode Standard.
-
-I’d go even further, and say that the Unicode Standard actually outreached its own goal a bit. I think that the notion of encoding _seven_ (or whatever) different kinds of right-pointing arrows is silly. Why not just one arrow? Or nineteen? Why seven? “RIGHT SQUIGGLE ARROW”, “RIGHT WAVE ARROW”, “NOTCHED LOWER RIGHT-SHADOWED WHITE RIGHTWARDS ARROW”, “BACK-TILTED SHADOWED WHITE RIGHTWARDS ARROW”, “HEAVY BLACK-FEATHERED RIGHTWARDS ARROW”… Ehem?
-
-But OK. We do have the Unicode Standard. It’s not perfect, but it’s fine for the most parts. But it’s “lookup by number” — a notion which is good for some applications but not really useful for others.
-
-Of course OpenType fonts do have the concept of “glyph names”, i.e. the PostScript glyph names -- but their role has been long overloaded, especially since the Adobe-recommended practice has been established where the names should mimick Unicode codepoints using the “uniXXXX” convention. So,
-PostScript glyph names are not in any way descriptive, really. But the fact that in original PostScript glyphs were keyed by name rather than number is telling — it tells us about human nature.
-
-> Humans like words better than they like numbers.
-
-Computers, of course, like numbers better than they like words. But typography, digital text -- is actually _primarily_ a tool for _communications between humans_ these days. It’s far less about computers than some software engineers might think.
-
-Now that `SVG` is part of OpenType, it’s more likely than ever that fonts will be used as an efficient storage for non-textual symbols. A font is not _just_ a collection of symbols. It’s a collection of symbols that, through layout systems, establishes logical and spatial relationships between these symbols. Inside a font, you can define what should happen if certain symbols occur in a sequence, under what circumstances different variants are used, and what is the spacing behavior of these symbols in relation to each other. That’s something you won’t easily implement in a cross-platform way if you just have a “bag of loose SVG graphics”. Also, fonts have (and will even more in future) a mechanism for choosing size-specific variants of the same symbol, so you won’t have to rely on linear scaling, which often produces optically sub-par results.
-
-We have at least three layout systems on the market (OpenType Layout, AAT, SIL Graphite), and none of them provides a fully adequate mechanism to provide explanatory metadata to all kinds of glyph variants the font may have.
-
-Glyph labeling is very useful for the textual context as well. Imagine a simple situation: you have a font which has two variants of the asterisk (`*`): one with six arms and another with five arms. You can encode one as a stylistic alternate of the other, but there isn’t really an easy way to provide the user with the information that the one glyph is “asterisk with six arms” and the other is “asterisk with five arms”.
-
-The same goes for other kinds of specially-formed glyph variants, where the designer might want to embed some useful information about what particular glyphs are useful for, what’s their stylistic treatment etc.
-
-And we have the “lookup by name” issue. That’s where the vocabularyID idea (which was suggested by Laurence) comes in: any entity could establish a Vocabulary and register it. Then, they could publish their vocabulary and the corresponding expected symbols. For example, an organization of map
-rendering services could agree on a vocabulary for symbols used on maps. Then, font vendors could develop various fonts for use on maps, and if they label their glyphs using the mapping Vocabulary, the notion of switching the style of a map would be simple — the glyphs in a font could be looked up
-using the mapping Vocabulary labels, and then, when the font is switched, a different set of symbols could be used. This could would be much more sensible to implement than doing all kinds of “corporate use of the PUA” kinds of hackery (which still could be done of course).
-
-And finally — how the heck are you currently supposed to find a glyph which shows, say, a banana on MyFonts? There are fonts on MyFonts which have a glyph that shows a banana, I’m sure. But there is no way for the user to discover them now.
-
-Of course font developers could make accompanying documents which describe to the user what each symbol is. But there is no standardized way to make such documents, and such documents do not travel with the font. The idea behind the `LABL` proposal is to embed this metadata inside of the font, so it doesn’t get “lost” on its travels.
-
-Another example is mathematical typesetting: regardless of whether a typesetting engine uses the Microsoft MATH table or some TeX typesetting technique or yet another way — I think it’d be useful if the mathematical players in the field (e.g. STIX) created a vocabulary for glyphs used in math
-typesetting, and embedded them into their fonts. Other mathematical font vendors could follow that. This would aid switching fonts, providing better fallback scenarios or even just developing new math fonts (because the labels would be helpful for other font developers to understand the nature of a particular glyph).
-
-There is a large number of legitimate usage scenarios for fonts where labels are better than numbers. Either to look up glyphs by label, or to display the label to the user.
-
-### Earlier proposals, `Zapf` table
+### `Zapf` table
 
 Apple maintains a spec for the SFNT [`Zapf`](https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6Zapf.html) table that partially has similar goals. I have reviewed the `Zapf` table spec before writing my own proposal. I always liked the name of the `Zapf` table and its general intent — but at the same time, I have always found the actual table format hard to understand.
 
@@ -269,18 +290,24 @@ There are multiple different structures (GlyphInfo, KindName, GroupInfo, GroupIn
 
 The `Zapf` table is almost 20 years old, and has a number of concepts which certainly are out of date (hardcoded four types of names: Apple name, Adobe name, AFII name, Unicode name). The table has been defined in pre-webfont, and even to some extent pre-web times.
 
-With the recent discussion of color font formats, I’ve heard one recurring word of praise for the Microsoft proposal (`COLR`/`CPAL`): that it was _simple and lightweight_, therefore easy to implement. I have noticed that this aspect of the Microsoft proposal was almost universally praised, and this was what has motivated me to attempt a similar path with the `LABL` proposal. I have a feeling that the `Zapf` table is a tad too ambitious, and a bit
+### Earlier proposal
+
+I have circulated an early version of this proposal in 2013. It went nowhere, but two other proposals that I have made back then, have went somewhere (SVG in OpenType and variable OpenType fonts). It’s 2020, and I think the reasons behind my proposal have actually multiplied.
+
+In the above proposal, some portions (such as the concept of vocabularyIDs, and in particular the registered vocabularyIDs and the “text contents” vocabularyID 0), are optional, and could be “done away with” if the community deems it too complex. I’m kind of keen on at least keeping two vocabularyIDs: 0 for “text contents” and 1 for “private labels”.
+
+I’m grateful to Laurence Penney for mentioning The Noun Project to me, and for his ideas that helped me formulate the “vocabulary” concept in this proposal.
+
+With discussion of color font formats in 2013, I’ve heard one recurring word of praise for the Microsoft proposal (`COLR`/`CPAL`): that it was _simple and lightweight_, therefore easy to implement. I have noticed that this aspect of the Microsoft proposal was almost universally praised, and this was what has motivated me to attempt a similar path with the `LABL` proposal. I have a feeling that the `Zapf` table is a tad too ambitious, and a bit
 “over-engineered”, and therefore never really found wide adoption.
 
-So, when writing the `LABL` proposal, I tried to learn from the lack of adoption of `Zapf` and from the overall warm welcome of the `COLR/CPAL` proposal. I tried to make the structure clean and simple to use.
+When writing the `LABL` proposal, I tried to learn from the lack of adoption of `Zapf` and from the overall warm welcome of the `COLR/CPAL` proposal. I tried to make the structure clean and simple to use.
 
 I tried to create a structure that is a bit modular — e.g. the concept of registered vocabularyIDs is sort of optional. If the community finds that aspect too much of a complication, it can be removed (leaving only one or two hardcoded Encoding IDs) without invalidating the entire structure. Analogically, if the community decides to drop that idea now but revisits it in future, the notion of adding an extra Encoding ID is easy and won’t break previous implementations.
 
 Plus, the Vocabulary concept allows for a clean separation: each vocabulary exists in a separate LABL subtable, therefore a font developer can easily set up, say, 30 labels within one particular vocabulary, and then 150 labels within another vocabulary, independently of each other. This is something I learned to like about `cmap` — that each `cmap` subtable can really be handled separately. These days, only the cmap 3.x is of relevance, but the fact that you can “safely” add or remove 0.x, 1.x or 4.x cmap subtables without interfering with the 3.x subtable, and that these subtables could address different subsets of the glyphset, always was appealing to me.
 
 The fact that pretty much every font editing tool already has a `name` table editor, and that all platforms have the ability to parse the `name` table makes the `LABL` proposal a rather low-hanging fruit.
-
-Since the `LABL` table itself is really trivial in structure in itself, and re-uses `cmap` structures, also means that adding support for it will be very easy. For example, I imagine that adding `LABL` support to something like fontTools/TTX is a matter of 15 minutes work.
 
 The only administrative overhead resulting from my proposal will be the maintenance of the list of registered Vocabulary IDs. But I believe it’s unlikely we’ll ever get more than a dozen of those, so it’s still quite “cheap”.
 
